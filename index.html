@@ -564,24 +564,25 @@ const PROMO_CONFIG = {
   chip: "限時狂歡 · 兩種方案擇一",
   mode: "擇一",
   tiers: [
-    { pct:5, multiplier:1 },
-    { pct:8, multiplier:3 },
+    { min:1000, pct:5, multiplier:1, rule:"儲值贈 5%，彩金碼量為（本金＋彩金）* 1 倍流水後方可申請出款。" },
+    { min:1000, pct:8, multiplier:3, rule:"儲值贈 8%，彩金碼量為（本金＋彩金）* 3 倍流水後方可申請出款。" },
   ],
   cap: 58888,
   turnover: "本金+彩金",
-  tierNote: "兩種方案擇一申請 · 單筆彩金最高 $58,888",
+  tierNote: "單筆儲值滿 $1,000 · 每一筆皆可申請 · 彩金最高 $58,888",
   footnote: "5% 出款需（本金＋彩金）1 倍流水 · 8% 出款需（本金＋彩金）3 倍流水",
   terms: [
     "儲值後未下注前聯繫客服申請。",
-    "儲值贈 5%（流水 1 倍）與儲值贈 8%（流水 3 倍）擇一申請。",
+    "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
+    "5%回饋（流水 1 倍）與 8%回饋（流水 3 倍）擇一申請。",
     "單筆彩金最高 $58,888。",
   ],
   rules: [
     "活動時間：10/23（五）～10/26（一）23:59。",
-    "儲值贈 5%，彩金碼量為（本金＋彩金）* 1 倍流水後方可申請出款。",
-    "儲值贈 8%，彩金碼量為（本金＋彩金）* 3 倍流水後方可申請出款。",
+    "{方案規則}",
+    "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
     "兩種方案擇一申請，單筆彩金最高 $58,888。",
-    "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」及「彩票遊戲館」。",
+    "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
     "儲值後未下注前聯繫客服申請。",
     "黃金豹保有最終審核權，有權拒絕發放彩金。",
     "黃金豹保留本活動之最終解釋權。",
@@ -589,6 +590,7 @@ const PROMO_CONFIG = {
 };
 
 const money = n => n.toLocaleString("en-US");
+const PLAN_RULE = "{方案規則}";
 const INELIGIBLE = "不符合資格";
 const LEGAL_TERMS = `一、誠信原則：本平台所有優惠活動僅針對一般玩家所設立。若發現會員採取不正當手段、利用程式漏洞或違反遊戲規則以套取紅利，本平台有權收回所有點數及紅利，情節嚴重者將採取永久凍結帳號處置。
 
@@ -651,10 +653,11 @@ function normalizePromo(raw, file){
     if(tt !== "本金+彩金" && tt !== "彩金") return bad("turnover 只能填「本金+彩金」或「彩金」");
     const tm = t.multiplier != null ? Number(t.multiplier) : multiplier;
     if(!(tm > 0)) return bad("multiplier（流水倍數）要大於 0");
-    const tier = { min, multiplier:tm, withDeposit:tt === "本金+彩金", label:str(t.label), pick:choose };
+    const tier = { min, multiplier:tm, withDeposit:tt === "本金+彩金", label:str(t.label), pick:choose, rule:str(t.rule) };
     if(t.pct != null && pct > 0 && pct <= 100) tier.pct = pct;
     else if(t.bonus != null && bonus > 0) tier.bonus = Math.floor(bonus);
     else return bad("tiers 每一階要填 pct（回饋 %）或 bonus（固定彩金）");
+    tier.title = str(t.title) || (choose ? (tier.pct != null ? `${tier.pct}%回饋` : `$${money(tier.bonus)}彩金`) : "");
     tiers.push(tier);
   }
   if(choose){
@@ -665,6 +668,7 @@ function normalizePromo(raw, file){
   }
   const rules = list(raw.rules);
   if(!rules.length) return bad("rules（活動規則）至少要有一條");
+  if(rules.includes(PLAN_RULE) && tiers.some(t => !t.rule)) return bad(`rules 用了 ${PLAN_RULE}，每個方案都要寫 rule（該方案的規則）`);
   const chip = str(raw.chip);
   const order = Number(raw.order);
   return { ok:true, file, promo:{
@@ -727,7 +731,7 @@ const isPct = t => t.pct != null;
 const giftText = t => isPct(t) ? `${t.pct}%` : `$${money(t.bonus)}`;
 function tierLabel(t){
   if(t.label) return t.label;
-  if(t.pick) return `${t.min > 0 ? `儲 ${money(t.min)} ` : "儲值"}贈 ${giftText(t)}（流水 ${t.multiplier} 倍）`;
+  if(t.pick) return `${t.title}（流水 ${t.multiplier} 倍）`;
   return `儲 ${money(t.min)} 送 ${giftText(t)}`;
 }
 const tierFor = (p, deposit) => [...p.tiers].reverse().find(t => deposit >= t.min) || null;
@@ -781,10 +785,10 @@ function buildFinish(r){
       + `--------------------------------\n`
       + `${INELIGIBLE}，${r.reason}`;
   }
-  const rules = p.rules.map((t,i) => `${i+1}.${t}`).join("\n");
+  const rules = p.rules.flatMap(t => t === PLAN_RULE ? (r.tier.rule ? [r.tier.rule] : []) : [t]).map((t,i) => `${i+1}.${t}`).join("\n");
   return `申請成功   【${p.name}】\n`
     + `--------------------------------\n`
-    + `申請項目：${p.name}\n`
+    + `申請項目：${promoName(r)}\n`
     + `適用方案：${tierLabel(r.tier)}\n`
     + `本次儲值：${money(r.deposit)}\n`
     + `獲得彩金：${money(r.bonus)}\n`
@@ -794,12 +798,16 @@ function buildFinish(r){
     + `系統已派發完成，請重新整理頁面查收。`;
 }
 
+function promoName(r){
+  return r && r.tier && r.tier.title ? `${r.promo.name} ${r.tier.title}` : r ? r.promo.name : "";
+}
+
 function buildRemark(r){
   if(!r || !r.ok) return INELIGIBLE;
   const d = new Date();
   const p = n => String(n).padStart(2,"0");
-  const tag = isPct(r.tier) ? `${r.tier.pct}%-` : "";
-  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${r.promo.name}-${tag}$${money(r.bonus)}`;
+  const tag = r.tier.title ? "" : isPct(r.tier) ? `${r.tier.pct}%-` : "";
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${promoName(r)}-${tag}$${money(r.bonus)}`;
 }
 
 const $ = id => document.getElementById(id);
@@ -1021,7 +1029,7 @@ document.querySelectorAll("[data-copy-value]").forEach(btn => {
   btn.addEventListener("click", () => {
     if(!current) return;
     const map = {
-      promo: current.promo.name,
+      promo: promoName(current),
       bonus: current.ok ? money(current.bonus) : INELIGIBLE,
       turnover: current.ok ? money(current.required) : INELIGIBLE,
       remark: buildRemark(current),
@@ -1139,9 +1147,9 @@ window.__selfTest = function(){
     tiers:[{ pct:5, multiplier:1 }, { pct:8, multiplier:3 }], cap:58888, turnover:"本金+彩金",
     terms:["儲值後未下注前聯繫客服申請。"], rules:["活動時間：10/23（五）～10/26（一）23:59。", GAME, FIN],
   }, "carnival.json").promo;
-  eq([C.choose, C.tiers.map(tierLabel), C.tierHint], [true, ["儲值贈 5%（流水 1 倍）", "儲值贈 8%（流水 3 倍）"], "請選擇會員要的方案（可按 1～2）"], "擇一方案設定");
+  eq([C.choose, C.tiers.map(tierLabel), C.tierHint], [true, ["5%回饋（流水 1 倍）", "8%回饋（流水 3 倍）"], "請選擇會員要的方案（可按 1～2）"], "擇一方案設定");
   const noPick = calculate(C, "10000");
-  eq([noPick.ok, noPick.reason], [false, "請選擇方案：儲值贈 5%（流水 1 倍） 或 儲值贈 8%（流水 3 倍）。"], "擇一未選方案");
+  eq([noPick.ok, noPick.reason], [false, "請選擇方案：5%回饋（流水 1 倍） 或 8%回饋（流水 3 倍）。"], "擇一未選方案");
   [["10000",0,500,10500,false],["10000",1,800,32400,false],["1萬2",1,960,38880,false],["999",0,49,1048,false],
    ["1177760",0,58888,1236648,false],["1177780",0,58888,1236668,true],["736100",1,58888,2384964,false],["800000",1,58888,2576664,true]].forEach(([d,i,b,req,cap]) => {
     const r = calculate(C, d, i);
@@ -1149,10 +1157,26 @@ window.__selfTest = function(){
   });
   eq(calculate(C, "", 1).reason, "請輸入本次實際儲值金額。", "擇一金額留空");
   const cc = buildConfirm(calculate(C,"10000",1)), cf = buildFinish(calculate(C,"10000",1));
-  ["申請 【限時狂歡】","適用方案:儲值贈 8%（流水 3 倍）","本次儲值:$10,000","加贈彩金:$800","須達碼量:$32,400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
-  ["申請成功   【限時狂歡】","適用方案：儲值贈 8%（流水 3 倍）","獲得彩金：800","須達碼量：32,400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
+  ["申請 【限時狂歡】","適用方案:8%回饋（流水 3 倍）","本次儲值:$10,000","加贈彩金:$800","須達碼量:$32,400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
+  ["申請成功   【限時狂歡】","申請項目：限時狂歡 8%回饋","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","須達碼量：32,400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
   if(!buildConfirm(calculate(C,"10000",0)).includes("須達碼量:$10,500（本金＋彩金）× 1 倍")) fails.push("擇一 5% 應為 1 倍流水");
-  eq(buildRemark(calculate(C,"10000",1)).endsWith("限時狂歡-8%-$800"), true, "擇一備註格式");
+  eq(buildRemark(calculate(C,"10000",1)).endsWith(" 限時狂歡 8%回饋-$800"), true, "擇一備註格式");
+  eq([promoName(calculate(C,"10000",0)), promoName(calculate(C,"10000",1)), promoName(calculate(C,"10000"))], ["限時狂歡 5%回饋", "限時狂歡 8%回饋", "限時狂歡"], "優惠名稱依方案");
+
+  const P = PROMO;
+  eq(P.tiers.map(t => [t.min, t.pct, t.multiplier, t.title]), [[1000,5,1,"5%回饋"],[1000,8,3,"8%回饋"]], "頁面活動：最低 1,000、兩方案");
+  const p999 = [calculate(P,"999",0), calculate(P,"999",1)];
+  eq(p999.map(r => [r.ok, r.reason]), [[false,"本次儲值 $999 未達最低門檻 $1,000，差額 $1。"],[false,"本次儲值 $999 未達最低門檻 $1,000，差額 $1。"]], "未滿 1,000 擋下");
+  eq([calculate(P,"1000",0).bonus, calculate(P,"1000",0).required, calculate(P,"1000",1).bonus, calculate(P,"1000",1).required], [50, 1050, 80, 3240], "剛好 1,000");
+  const f5 = buildFinish(calculate(P,"10000",0)), f8 = buildFinish(calculate(P,"10000",1));
+  if(!f5.includes("2.儲值贈 5%，彩金碼量為（本金＋彩金）* 1 倍流水後方可申請出款。") || f5.includes("儲值贈 8%")) fails.push("選 5% 結束文案只能有 5% 的規則");
+  if(!f8.includes("2.儲值贈 8%，彩金碼量為（本金＋彩金）* 3 倍流水後方可申請出款。") || f8.includes("儲值贈 5%")) fails.push("選 8% 結束文案只能有 8% 的規則");
+  ["3.單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","8.黃金豹保留本活動之最終解釋權。","申請項目：限時狂歡 5%回饋"].forEach(x => { if(!f5.includes(x)) fails.push(`頁面活動結束文案缺: ${x}`); });
+  if((f5 + f8).includes("彩票")) fails.push("不應出現彩票遊戲館");
+  if((f5 + f8).includes(PLAN_RULE)) fails.push("方案規則佔位字不應出現");
+  const c5 = buildConfirm(calculate(P,"10000",0));
+  ["適用方案:5%回饋（流水 1 倍）","單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。"].forEach(x => { if(!c5.includes(x)) fails.push(`頁面活動確認文案缺: ${x}`); });
+  bad({ ...base, rules:["{方案規則}"] }, "rule", "用了方案規則但方案沒寫 rule");
   const M = normalizePromo({ ...base, mode:"擇一", tiers:[{ min:3000, pct:5, multiplier:2, turnover:"彩金" }, { pct:6 }] }, "m.json").promo;
   eq([M.tiers[0].min, M.tiers[1].min, M.tiers[0].withDeposit, M.tiers[1].multiplier], [3000, 0, false, 1], "擇一方案可各自設門檻與流水");
   eq(calculate(M, "2999", 0).reason, "本次儲值 $2,999 未達最低門檻 $3,000，差額 $1。", "擇一方案門檻");

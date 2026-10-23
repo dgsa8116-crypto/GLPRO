@@ -503,7 +503,7 @@ header::after{
 
     <section class="panel control">
       <i class="corner tl"></i><i class="corner br"></i>
-      <div class="panel-head"><span class="mark">✦</span><h2>試算中控</h2><span class="rule"></span></div>
+      <div class="panel-head"><span class="mark">✦</span><h2>三年後的大雪</h2><span class="rule"></span></div>
 
       <span class="vip-chip" id="promo-chip"></span>
 
@@ -788,7 +788,7 @@ function buildFinish(r){
   const rules = p.rules.flatMap(t => t === PLAN_RULE ? (r.tier.rule ? [r.tier.rule] : []) : [t]).map((t,i) => `${i+1}.${t}`).join("\n");
   return `申請成功   【${p.name}】\n`
     + `--------------------------------\n`
-    + `申請項目：${promoName(r)}\n`
+    + `申請項目：${p.name}\n`
     + `適用方案：${tierLabel(r.tier)}\n`
     + `本次儲值：${money(r.deposit)}\n`
     + `獲得彩金：${money(r.bonus)}\n`
@@ -1029,7 +1029,7 @@ document.querySelectorAll("[data-copy-value]").forEach(btn => {
   btn.addEventListener("click", () => {
     if(!current) return;
     const map = {
-      promo: promoName(current),
+      promo: current.promo.name,
       bonus: current.ok ? money(current.bonus) : INELIGIBLE,
       turnover: current.ok ? money(current.required) : INELIGIBLE,
       remark: buildRemark(current),
@@ -1158,7 +1158,7 @@ window.__selfTest = function(){
   eq(calculate(C, "", 1).reason, "請輸入本次實際儲值金額。", "擇一金額留空");
   const cc = buildConfirm(calculate(C,"10000",1)), cf = buildFinish(calculate(C,"10000",1));
   ["申請 【限時狂歡】","適用方案:8%回饋（流水 3 倍）","本次儲值:$10,000","加贈彩金:$800","須達碼量:$32,400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
-  ["申請成功   【限時狂歡】","申請項目：限時狂歡 8%回饋","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","須達碼量：32,400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
+  ["申請成功   【限時狂歡】","申請項目：限時狂歡\n","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","須達碼量：32,400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
   if(!buildConfirm(calculate(C,"10000",0)).includes("須達碼量:$10,500（本金＋彩金）× 1 倍")) fails.push("擇一 5% 應為 1 倍流水");
   eq(buildRemark(calculate(C,"10000",1)).endsWith(" 限時狂歡 8%回饋-$800"), true, "擇一備註格式");
   eq([promoName(calculate(C,"10000",0)), promoName(calculate(C,"10000",1)), promoName(calculate(C,"10000"))], ["限時狂歡 5%回饋", "限時狂歡 8%回饋", "限時狂歡"], "優惠名稱依方案");
@@ -1171,7 +1171,7 @@ window.__selfTest = function(){
   const f5 = buildFinish(calculate(P,"10000",0)), f8 = buildFinish(calculate(P,"10000",1));
   if(!f5.includes("2.儲值贈 5%，彩金碼量為（本金＋彩金）* 1 倍流水後方可申請出款。") || f5.includes("儲值贈 8%")) fails.push("選 5% 結束文案只能有 5% 的規則");
   if(!f8.includes("2.儲值贈 8%，彩金碼量為（本金＋彩金）* 3 倍流水後方可申請出款。") || f8.includes("儲值贈 5%")) fails.push("選 8% 結束文案只能有 8% 的規則");
-  ["3.單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","8.黃金豹保留本活動之最終解釋權。","申請項目：限時狂歡 5%回饋"].forEach(x => { if(!f5.includes(x)) fails.push(`頁面活動結束文案缺: ${x}`); });
+  ["3.單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","8.黃金豹保留本活動之最終解釋權。","申請項目：限時狂歡\n"].forEach(x => { if(!f5.includes(x)) fails.push(`頁面活動結束文案缺: ${x}`); });
   if((f5 + f8).includes("彩票")) fails.push("不應出現彩票遊戲館");
   if((f5 + f8).includes(PLAN_RULE)) fails.push("方案規則佔位字不應出現");
   const c5 = buildConfirm(calculate(P,"10000",0));

@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>別鬧</title>
+<title>神之騎士團</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -603,6 +603,7 @@ const PROMO_CONFIG = {
 };
 
 const money = n => n.toLocaleString("en-US");
+const plain = n => String(Math.floor(n));
 const PLAN_RULE = "{方案規則}";
 const INELIGIBLE = "不符合資格";
 const LEGAL_TERMS = `一、誠信原則：本平台所有優惠活動僅針對一般玩家所設立。若發現會員採取不正當手段、利用程式漏洞或違反遊戲規則以套取紅利，本平台有權收回所有點數及紅利，情節嚴重者將採取永久凍結帳號處置。
@@ -781,8 +782,8 @@ function buildConfirm(r){
       + terms;
   }
   return head
-    + `加贈彩金:$${money(r.bonus)}\n`
-    + `須達碼量:$${money(r.required)}${turnoverText(r.tier)}\n\n`
+    + `加贈彩金:${plain(r.bonus)}\n`
+    + `須達碼量:${plain(r.required)}${turnoverText(r.tier)}\n\n`
     + `${terms}\n\n`
     + `請問您是否確認申請？`;
 }
@@ -804,8 +805,8 @@ function buildFinish(r){
     + `申請項目：${p.name}\n`
     + `適用方案：${tierLabel(r.tier)}\n`
     + `本次儲值：${money(r.deposit)}\n`
-    + `獲得彩金：${money(r.bonus)}\n`
-    + `須達碼量：${money(r.required)}\n`
+    + `獲得彩金：${plain(r.bonus)}\n`
+    + `須達碼量：${plain(r.required)}\n`
     + `--------------------------------\n`
     + `活動規則：\n${rules}\n`
     + `系統已派發完成，請重新整理頁面查收。`;
@@ -820,7 +821,7 @@ function buildRemark(r){
   const d = new Date();
   const p = n => String(n).padStart(2,"0");
   const tag = r.tier.title ? "" : isPct(r.tier) ? `${r.tier.pct}%-` : "";
-  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${promoName(r)}-${tag}$${money(r.bonus)}`;
+  return `${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${promoName(r)}-${tag}${plain(r.bonus)}`;
 }
 
 const $ = id => document.getElementById(id);
@@ -984,7 +985,7 @@ function render(){
     if(!ACTIVE.choose) return;
     el.setAttribute("aria-pressed", applies ? "true" : "false");
     const t = ACTIVE.tiers[i], r = calculate(ACTIVE, depositRaw, i);
-    const parts = r.ok ? [`彩金 $${money(r.bonus)}`, `碼量 $${money(r.required)}`]
+    const parts = r.ok ? [`彩金 ${plain(r.bonus)}`, `碼量 ${plain(r.required)}`]
       : [deposit > 0 && deposit < t.min ? `還差 $${money(t.min - deposit)}` : `按 ${i + 1} 選擇`];
     const box = el.querySelector(".calc"), text = parts.join(" ");
     if(box.dataset.text !== text){
@@ -994,9 +995,9 @@ function render(){
   });
 
   const bonusEl = $("out-bonus");
-  setPulsedText(bonusEl, current.ok ? money(current.bonus) : INELIGIBLE);
+  setPulsedText(bonusEl, current.ok ? plain(current.bonus) : INELIGIBLE);
   bonusEl.classList.toggle("void", !current.ok);
-  setPulsedText($("out-turnover"), current.required > 0 ? money(current.required) : INELIGIBLE);
+  setPulsedText($("out-turnover"), current.required > 0 ? plain(current.required) : INELIGIBLE);
   $("out-gate").textContent = current.tier ? tierLabel(current.tier) : INELIGIBLE;
   $("out-remark").textContent = buildRemark(current);
 
@@ -1044,8 +1045,8 @@ document.querySelectorAll("[data-copy-value]").forEach(btn => {
     if(!current) return;
     const map = {
       promo: current.promo.name,
-      bonus: current.ok ? money(current.bonus) : INELIGIBLE,
-      turnover: current.ok ? money(current.required) : INELIGIBLE,
+      bonus: current.ok ? plain(current.bonus) : INELIGIBLE,
+      turnover: current.ok ? plain(current.required) : INELIGIBLE,
       remark: buildRemark(current),
     };
     copy(map[btn.dataset.copyValue], btn, btn.dataset.name);
@@ -1144,17 +1145,18 @@ window.__selfTest = function(){
   eq(calculate(W, "").reason, "請輸入本次實際儲值金額。", "金額留空");
 
   const wc = buildConfirm(calculate(W,"15000")), wf = buildFinish(calculate(W,"15000"));
-  ["申請 【週一工作日限時優惠】","適用方案:儲 12,000 送 5%","加贈彩金:$750","須達碼量:$47,250（本金＋彩金）× 3 倍","當日僅能申請一次。","誠信原則","公平審核","請問您是否確認申請？"].forEach(s => {
+  ["申請 【週一工作日限時優惠】","適用方案:儲 12,000 送 5%","加贈彩金:750","須達碼量:47250（本金＋彩金）× 3 倍","當日僅能申請一次。","誠信原則","公平審核","請問您是否確認申請？"].forEach(s => {
     if(!wc.includes(s)) fails.push(`確認文案缺: ${s}`);
   });
-  ["申請成功   【週一工作日限時優惠】","獲得彩金：750","須達碼量：47,250",GAME,"4.黃金豹保留本活動之最終解釋權。","系統已派發完成"].forEach(s => {
+  ["申請成功   【週一工作日限時優惠】","獲得彩金：750","須達碼量：47250",GAME,"4.黃金豹保留本活動之最終解釋權。","系統已派發完成"].forEach(s => {
     if(!wf.includes(s)) fails.push(`結束文案缺: ${s}`);
   });
   const rc = buildConfirm(calculate(R,"3000")), rf = buildFinish(calculate(R,"3000"));
-  ["適用方案:儲 2,000 送 $88","加贈彩金:$88","須達碼量:$88（彩金）× 1 倍",STACK].forEach(s => { if(!rc.includes(s)) fails.push(`固定彩金確認文案缺: ${s}`); });
+  ["適用方案:儲 2,000 送 $88","加贈彩金:88","須達碼量:88（彩金）× 1 倍",STACK].forEach(s => { if(!rc.includes(s)) fails.push(`固定彩金確認文案缺: ${s}`); });
   ["適用方案：儲 2,000 送 $88","獲得彩金：88","須達碼量：88"].forEach(s => { if(!rf.includes(s)) fails.push(`固定彩金結束文案缺: ${s}`); });
   if((wc + wf + rc + rf).includes("已達上限")) fails.push("不應顯示已達上限");
-  eq(buildRemark(calculate(R,"3000")).endsWith("全體動員 88 彩金-$88"), true, "備註格式");
+  [wc, wf, rc, rf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
+  eq(buildRemark(calculate(R,"3000")).endsWith("全體動員 88 彩金-88"), true, "備註格式");
 
   const C = normalizePromo({
     name:"限時狂歡", start:"2026-10-23 00:00", end:"2026-10-26 23:59:59", mode:"擇一",
@@ -1171,10 +1173,10 @@ window.__selfTest = function(){
   });
   eq(calculate(C, "", 1).reason, "請輸入本次實際儲值金額。", "擇一金額留空");
   const cc = buildConfirm(calculate(C,"10000",1)), cf = buildFinish(calculate(C,"10000",1));
-  ["申請 【限時狂歡】","適用方案:8%回饋（流水 3 倍）","本次儲值:$10,000","加贈彩金:$800","須達碼量:$32,400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
-  ["申請成功   【限時狂歡】","申請項目：限時狂歡\n","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","須達碼量：32,400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
-  if(!buildConfirm(calculate(C,"10000",0)).includes("須達碼量:$10,500（本金＋彩金）× 1 倍")) fails.push("擇一 5% 應為 1 倍流水");
-  eq(buildRemark(calculate(C,"10000",1)).endsWith(" 限時狂歡 8%回饋-$800"), true, "擇一備註格式");
+  ["申請 【限時狂歡】","適用方案:8%回饋（流水 3 倍）","本次儲值:$10,000","加贈彩金:800","須達碼量:32400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
+  ["申請成功   【限時狂歡】","申請項目：限時狂歡\n","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","須達碼量：32400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
+  if(!buildConfirm(calculate(C,"10000",0)).includes("須達碼量:10500（本金＋彩金）× 1 倍")) fails.push("擇一 5% 應為 1 倍流水");
+  eq(buildRemark(calculate(C,"10000",1)).endsWith(" 限時狂歡 8%回饋-800"), true, "擇一備註格式");
   eq([promoName(calculate(C,"10000",0)), promoName(calculate(C,"10000",1)), promoName(calculate(C,"10000"))], ["限時狂歡 5%回饋", "限時狂歡 8%回饋", "限時狂歡"], "優惠名稱依方案");
 
   const P = PROMO;

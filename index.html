@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>神之騎士團</title>
+<title>別鬧</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@500;700;900&family=Noto+Sans+TC:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -405,6 +405,22 @@ header::after{
   .sparkle.lg2{display:none}
 }
 [hidden]{display:none!important}
+.part-tabs{display:grid;grid-template-columns:repeat(var(--tabs,2),minmax(0,1fr));gap:8px;margin-bottom:8px;flex-shrink:0}
+.part-tab{
+  display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:1px;align-items:baseline;min-width:0;padding:6px 12px;cursor:pointer;
+  border-radius:var(--r-md);font:inherit;text-align:left;color:var(--ink-dim);
+  border:1px solid var(--edge);background:linear-gradient(160deg,rgba(46,48,54,.5),rgba(12,13,17,.5));transition:border-color .2s,color .2s;
+}
+.part-tab b{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.22em;color:var(--ink-faint)}
+.part-tab span{grid-column:1 / -1;grid-row:2;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;font-weight:600;letter-spacing:.04em;color:inherit}
+.part-tab small{justify-self:end;font-family:var(--mono);font-size:10.5px;color:var(--ink-faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.part-tab:hover:not(.on){border-color:rgba(233,201,118,.42);color:var(--champagne-hi)}
+.part-tab:focus-visible{outline:2px solid var(--aurora);outline-offset:2px}
+.part-tab.on{color:#120e04;border-color:transparent;background:linear-gradient(100deg,var(--ember),var(--champagne) 45%,var(--champagne-hi))}
+.part-tab.on b,.part-tab.on small{color:rgba(18,14,4,.72)}
+.amt-input.no-sign{padding-left:14px}
+.panel.control .amt-input.no-sign{padding-left:14px}
+@media(max-width:720px){.part-tabs{grid-template-columns:1fr}}
 .tiers.pick .tier{cursor:pointer;text-align:left}
 .tiers.pick .tier:hover:not(.on){border-color:rgba(233,201,118,.42)}
 .tiers.pick .tier:focus-visible{outline:2px solid var(--aurora);outline-offset:2px}
@@ -517,13 +533,16 @@ header::after{
       <i class="corner tl"></i><i class="corner br"></i>
       <div class="panel-head"><span class="mark">✦</span><h2>三年後的大雪</h2><span class="rule"></span></div>
 
+      <div class="part-tabs" id="part-tabs" role="group" aria-label="活動切換" hidden></div>
       <span class="vip-chip" id="promo-chip"></span>
 
-      <div class="field-label"><span>本次儲值金額</span><span class="hint">請輸入實際單筆儲值金額</span></div>
+      <div id="amount-field">
+      <div class="field-label"><span id="amount-label">本次儲值金額</span><span class="hint" id="amount-hint">請輸入實際單筆儲值金額</span></div>
       <div class="amount-wrap">
-        <span class="sign">$</span>
+        <span class="sign" id="amount-sign">$</span>
         <input id="amount" class="amt-input" type="text" inputmode="numeric" placeholder="例如 12,000" autocomplete="off">
         <span class="parsed" id="parsed"></span>
+      </div>
       </div>
       <div class="field-label"><span>優惠方案</span><span class="hint" id="tier-hint"></span></div>
       <div class="tiers" id="tiers"></div>
@@ -567,38 +586,80 @@ header::after{
 <script>
 "use strict";
 
-const PROMO_CONFIG = {
-  name: "限時狂歡",
-  start: "2026-10-23 00:00",
-  end: "2026-10-26 23:59:59",
-  date: "10/23（五）～10/26（一）23:59",
-  tagline: "儲值贈 5% 或 8%・最高彩金 $58,888",
-  chip: "限時狂歡 · 兩種方案擇一",
-  mode: "擇一",
-  tiers: [
-    { min:1000, pct:5, multiplier:1, rule:"儲值贈 5%，彩金碼量為（本金＋彩金）* 1 倍流水後方可申請出款。" },
-    { min:1000, pct:8, multiplier:3, rule:"儲值贈 8%，彩金碼量為（本金＋彩金）* 3 倍流水後方可申請出款。" },
-  ],
-  cap: 58888,
-  turnover: "本金+彩金",
-  tierNote: "單筆儲值滿 $1,000 · 每一筆皆可申請 · 彩金最高 $58,888",
-  footnote: "5% 出款需（本金＋彩金）1 倍流水 · 8% 出款需（本金＋彩金）3 倍流水",
-  terms: [
-    "儲值後未下注前聯繫客服申請。",
-    "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
-    "完成碼量後儲值才可領取下一筆優惠。",
-    "5%回饋（流水 1 倍）與 8%回饋（流水 3 倍）擇一申請。",
-    "單筆彩金最高 $58,888。",
-  ],
-  rules: [
-    "活動時間：10/23（五）～10/26（一）23:59。",
-    "{方案規則}",
-    "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
-    "兩種方案擇一申請，單筆彩金最高 $58,888。",
-    "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
-    "儲值後未下注前聯繫客服申請。",
-    "黃金豹保有最終審核權，有權拒絕發放彩金。",
-    "黃金豹保留本活動之最終解釋權。",
+const CAMPAIGN = {
+  title: "限時突發空投",
+  parts: [
+    {
+      id: "drop168",
+      tab: "第一重",
+      short: "免費空投 168",
+      name: "限時突發空投｜第一重",
+      start: "2026-10-27 00:00",
+      end: "2026-10-28 20:00",
+      date: "即日起～10/28（三）20:00",
+      tagline: "老玩家回饋・免費空投 $168・彩金 1 倍流水",
+      chip: "曾在黃金豹儲值 1 次以上 · 每位會員限領一次",
+      input: "none",
+      tiers: [
+        { bonus:168, label:"免費空投 168" },
+      ],
+      turnover: "彩金",
+      multiplier: 1,
+      tierHint: "免審核 · 不需輸入金額",
+      tierNote: "曾在黃金豹儲值 1 次以上即可領取",
+      footnote: "每位會員限領一次 · 出款需達彩金 1 倍流水 · 10/28 20:00 準時關閉",
+      terms: [
+        "私訊客服即可申請領取。",
+        "本優惠限曾在黃金豹儲值 1 次以上的會員申請。",
+        "每位會員限領一次。",
+      ],
+      rules: [
+        "活動時間：即日起～10/28（三）20:00 止，逾期不補。",
+        "曾在黃金豹儲值 1 次以上的會員，即可免費領取彩金 $168。",
+        "每位會員限領一次。",
+        "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "私訊客服即可申請領取。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。",
+      ],
+    },
+    {
+      id: "turnover",
+      tab: "第二重",
+      short: "流水加碼 最高 20,000",
+      name: "限時突發空投｜第二重",
+      start: "2026-10-27 00:00",
+      end: "2026-11-01 23:59:59",
+      date: "即日起～11/01（日）23:59",
+      tagline: "當日有效投注達標・最高再送 $20,000",
+      chip: "每日限領一次 · 天天達標天天領",
+      input: { label:"當日有效投注", hint:"請輸入會員當日有效投注", placeholder:"例如 1,000,000", unit:"", gate:"投注" },
+      tiers: [
+        { min:1000000, bonus:1000, label:"當日有效投注滿 1,000,000 送 1,000" },
+        { min:5000000, bonus:5000, label:"當日有效投注滿 5,000,000 送 5,000" },
+        { min:10000000, bonus:20000, label:"當日有效投注滿 10,000,000 送 20,000" },
+      ],
+      turnover: "彩金",
+      multiplier: 1,
+      tierHint: "依當日有效投注自動套用最高一階",
+      tierNote: "三階擇最高一階 · 每日限領一次",
+      footnote: "每日限領一次 · 出款需達彩金 1 倍流水 · 活動至 11/01 23:59",
+      terms: [
+        "當日有效投注達標後聯繫客服申請。",
+        "每日限領一次，依當日有效投注適用最高一階。",
+      ],
+      rules: [
+        "活動時間：即日起～11/01（日）23:59。",
+        "當日有效投注滿 1,000,000 送 $1,000、滿 5,000,000 送 $5,000、滿 10,000,000 送 $20,000，依當日有效投注適用最高一階。",
+        "每日限領一次。",
+        "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "當日有效投注達標後聯繫客服申請。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。",
+      ],
+    },
   ],
 };
 
@@ -653,6 +714,15 @@ function normalizePromo(raw, file){
   const mode = str(raw.mode).replace(/\s+/g, "");
   if(mode && !/^(擇一|自選|依金額)$/.test(mode)) return bad("mode 只能填「擇一」（會員自選方案）或「依金額」（依儲值金額自動套用）");
   const choose = mode === "擇一" || mode === "自選";
+  const DEFAULT_INPUT = { label:"本次儲值", field:"本次儲值金額", hint:"請輸入實際單筆儲值金額", placeholder:"例如 12,000", unit:"$", gate:"儲", empty:"請輸入本次實際儲值金額。" };
+  let input = DEFAULT_INPUT;
+  if(raw.input === false || /^(none|免輸入|不需輸入)$/i.test(str(raw.input))) input = null;
+  else if(raw.input && typeof raw.input === "object"){
+    const lb = str(raw.input.label) || DEFAULT_INPUT.label;
+    input = { label:lb, field:str(raw.input.field) || lb, hint:str(raw.input.hint), placeholder:str(raw.input.placeholder),
+      unit:raw.input.unit != null ? str(raw.input.unit) : "$", gate:str(raw.input.gate) || lb, empty:`請輸入${lb}。` };
+  }
+  const free = choose || !input;
   if(!Array.isArray(raw.tiers) || !raw.tiers.length) return bad("tiers 至少要有一階");
   const normTurnover = v => (str(v) || "本金+彩金").replace(/＋/g, "+").replace(/\s+/g, "");
   const turnover = normTurnover(raw.turnover);
@@ -661,8 +731,8 @@ function normalizePromo(raw, file){
   const tiers = [];
   for(const t of raw.tiers){
     if(!t || typeof t !== "object") return bad("tiers 每一階都要用 { } 包起來");
-    const min = choose && t.min == null ? 0 : Number(t.min), pct = Number(t.pct), bonus = Number(t.bonus);
-    if(choose ? !(min >= 0) : !(min > 0)) return bad(choose ? "tiers 的 min 要是 0 以上的數字（0 或不填代表不限金額）" : "tiers 每一階都要有 min（儲值門檻）");
+    const min = free && t.min == null ? 0 : Number(t.min), pct = Number(t.pct), bonus = Number(t.bonus);
+    if(free ? !(min >= 0) : !(min > 0)) return bad(free ? "tiers 的 min 要是 0 以上的數字（0 或不填代表不限金額）" : "tiers 每一階都要有 min（儲值門檻）");
     const tt = t.turnover != null ? normTurnover(t.turnover) : turnover;
     if(tt !== "本金+彩金" && tt !== "彩金") return bad("turnover 只能填「本金+彩金」或「彩金」");
     const tm = t.multiplier != null ? Number(t.multiplier) : multiplier;
@@ -674,9 +744,10 @@ function normalizePromo(raw, file){
     tier.title = str(t.title) || (choose ? (tier.pct != null ? `${tier.pct}%回饋` : `$${money(tier.bonus)}彩金`) : "");
     tiers.push(tier);
   }
+  if(!input && (choose || tiers.length !== 1 || tiers[0].bonus == null)) return bad("不需輸入金額的活動（input: none）只能有一個固定彩金方案（bonus）");
   if(choose){
     if(tiers.length < 2) return bad("mode 擇一 至少要有兩個方案");
-  }else{
+  }else if(input){
     tiers.sort((a, b) => a.min - b.min);
     if(new Set(tiers.map(t => t.min)).size !== tiers.length) return bad("tiers 有重複的門檻");
   }
@@ -697,7 +768,10 @@ function normalizePromo(raw, file){
     cap: Math.max(0, Math.floor(Number(raw.cap) || 0)),
     withDeposit: tiers[0].withDeposit,
     multiplier: tiers[0].multiplier,
-    tierHint: str(raw.tierHint) || (choose ? `請選擇會員要的方案（可按 1～${tiers.length}）` : tiers.length > 1 ? "依儲值金額自動套用最高一階" : `儲值滿 $${money(tiers[0].min)} 即可領取`),
+    input,
+    tab: str(raw.tab),
+    short: str(raw.short) || name,
+    tierHint: str(raw.tierHint) || (!input ? "不需輸入金額" : input !== DEFAULT_INPUT ? (choose ? `請選擇會員要的方案（可按 1～${tiers.length}）` : `依${input.label}自動套用最高一階`) : choose ? `請選擇會員要的方案（可按 1～${tiers.length}）` : tiers.length > 1 ? "依儲值金額自動套用最高一階" : `儲值滿 $${money(tiers[0].min)} 即可領取`),
     tierNote: str(raw.tierNote),
     footnote: str(raw.footnote),
     terms: list(raw.terms),
@@ -719,6 +793,8 @@ function parseAmount(raw){
 
   const head = t => { const m = t.match(/^(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : 0; };
 
+  const big = s.match(/^(\d+(?:\.\d+)?)(億|千萬|百萬|十萬)$/);
+  if(big) return Math.floor(parseFloat(big[1]) * { "億":1e8, "千萬":1e7, "百萬":1e6, "十萬":1e5 }[big[2]]);
   if(s.endsWith("w")) return Math.floor(head(s.slice(0,-1)) * 10000);
   if(s.endsWith("k")) return Math.floor(head(s.slice(0,-1)) * 1000);
 
@@ -750,18 +826,22 @@ function tierLabel(t){
 }
 const tierFor = (p, deposit) => [...p.tiers].reverse().find(t => deposit >= t.min) || null;
 const turnoverText = t => t.withDeposit ? `（本金＋彩金）× ${t.multiplier} 倍` : `（彩金）× ${t.multiplier} 倍`;
-const shortfall = (deposit, min) => `本次儲值 $${money(deposit)} 未達最低門檻 $${money(min)}，差額 $${money(min - deposit)}。`;
+const shortfall = (p, deposit, min) => { const u = p.input.unit; return `${p.input.label} ${u}${money(deposit)} 未達最低門檻 ${u}${money(min)}，差額 ${u}${money(min - deposit)}。`; };
 
 function calculate(p, depositRaw, pick = -1){
+  if(!p.input){
+    const tier = p.tiers[0];
+    return { ok:true, promo:p, tier, deposit:0, required:tier.bonus * tier.multiplier, bonus:tier.bonus, capped:false, reason:"" };
+  }
   const deposit = parseAmount(depositRaw);
   const tier = p.choose ? (p.tiers[pick] || null) : tierFor(p, deposit);
   const base = { ok:false, promo:p, tier, deposit, required:0, bonus:0, capped:false, reason:"" };
-  if(deposit <= 0) return { ...base, reason:"請輸入本次實際儲值金額。" };
+  if(deposit <= 0) return { ...base, reason:p.input.empty };
   if(p.choose){
     if(!tier) return { ...base, reason:`請選擇方案：${p.tiers.map(tierLabel).join(" 或 ")}。` };
-    if(deposit < tier.min) return { ...base, reason:shortfall(deposit, tier.min) };
+    if(deposit < tier.min) return { ...base, reason:shortfall(p, deposit, tier.min) };
   }else if(!tier){
-    return { ...base, reason:shortfall(deposit, p.tiers[0].min) };
+    return { ...base, reason:shortfall(p, deposit, p.tiers[0].min) };
   }
   const raw = isPct(tier) ? Math.floor(deposit * tier.pct / 100) : tier.bonus;
   const bonus = p.cap > 0 ? Math.min(raw, p.cap) : raw;
@@ -774,7 +854,7 @@ function buildConfirm(r){
   const terms = `【活動條款與注意事項】\n${p.terms.join("\n")}\n\n${LEGAL_TERMS}`;
   const head = `申請 【${p.name}】\n`
     + `適用方案:${r.tier ? tierLabel(r.tier) : INELIGIBLE}\n`
-    + `本次儲值:${r.deposit > 0 ? "$" + money(r.deposit) : INELIGIBLE}\n`;
+    + (p.input ? `${p.input.label}:${r.deposit > 0 ? p.input.unit + money(r.deposit) : INELIGIBLE}\n` : "");
   if(!r.ok){
     return head
       + `加贈彩金:${INELIGIBLE}\n`
@@ -794,7 +874,7 @@ function buildFinish(r){
     return `${INELIGIBLE}   【${p.name}】\n`
       + `--------------------------------\n`
       + `申請項目：${INELIGIBLE}\n`
-      + `本次儲值：${r.deposit > 0 ? money(r.deposit) : INELIGIBLE}\n`
+      + (p.input ? `${p.input.label}：${r.deposit > 0 ? money(r.deposit) : INELIGIBLE}\n` : "")
       + `獲得彩金：${INELIGIBLE}\n`
       + `--------------------------------\n`
       + `${INELIGIBLE}，${r.reason}`;
@@ -804,7 +884,7 @@ function buildFinish(r){
     + `--------------------------------\n`
     + `申請項目：${p.name}\n`
     + `適用方案：${tierLabel(r.tier)}\n`
-    + `本次儲值：${money(r.deposit)}\n`
+    + (p.input ? `${p.input.label}：${money(r.deposit)}\n` : "")
     + `獲得彩金：${plain(r.bonus)}\n`
     + `須達碼量：${plain(r.required)}\n`
     + `--------------------------------\n`
@@ -865,8 +945,12 @@ function timeNote(p, t = clockNow()){
 }
 
 $("brand-mark").style.setProperty("--logo-mask", `url("${$("brand-logo").src}")`);
-const LOADED = normalizePromo(PROMO_CONFIG, "promo");
-const PROMO = LOADED.ok ? LOADED.promo : null;
+const LOADED_PARTS = CAMPAIGN.parts.map((raw, i) => normalizePromo(raw, raw && raw.id ? String(raw.id) : `part${i + 1}`));
+const PARTS = LOADED_PARTS.filter(x => x.ok).map(x => x.promo);
+const PART_ERRORS = LOADED_PARTS.filter(x => !x.ok);
+const PART_KEY = "gl-console-part";
+let wantPart = store.get(PART_KEY) || "";
+const liveParts = (t = clockNow()) => PARTS.filter(p => t < p.endMs);
 let ACTIVE = null;
 let current = null;
 
@@ -876,51 +960,81 @@ function paintTimeLeft(){
   if(ACTIVE) el.textContent = timeNote(ACTIVE);
 }
 
+function paintTabs(){
+  const box = $("part-tabs"), live = liveParts();
+  box.hidden = live.length < 2;
+  box.style.setProperty("--tabs", Math.max(1, live.length));
+  box.textContent = "";
+  if(live.length < 2) return;
+  live.forEach(p => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "part-tab" + (ACTIVE && p.id === ACTIVE.id ? " on" : "");
+    b.setAttribute("aria-pressed", ACTIVE && p.id === ACTIVE.id ? "true" : "false");
+    const tab = document.createElement("b"); tab.textContent = p.tab || p.name;
+    const name = document.createElement("span"); name.textContent = p.short;
+    const note = document.createElement("small"); note.textContent = timeNote(p);
+    b.append(tab, name, note);
+    b.title = p.name;
+    b.addEventListener("click", () => selectPart(p.id));
+    box.appendChild(b);
+  });
+}
+
 function paintPromo(){
   const p = ACTIVE;
   $("empty-state").hidden = !!p;
   $("grid").hidden = !p;
   $("status").hidden = !p;
+  $("promo-title").textContent = CAMPAIGN.title;
+  $("entry-title").textContent = CAMPAIGN.title;
+  paintTabs();
   if(!p){
-    const title = PROMO ? `「${PROMO.name}」已結束` : "活動設定有誤";
-    const text = PROMO ? "活動時間已到。要換下一檔活動時，修改頁面裡的 PROMO_CONFIG 再上傳即可。" : `請檢查頁面裡的 PROMO_CONFIG：${LOADED.error}`;
-    $("promo-title").textContent = PROMO ? PROMO.name : title;
-    $("tagline").textContent = PROMO ? "活動已結束" : "";
-    $("window-text").textContent = PROMO ? PROMO.date : "請檢查活動設定";
+    const broken = !PARTS.length;
+    const title = broken ? "活動設定有誤" : `「${CAMPAIGN.title}」已結束`;
+    const text = broken ? `請檢查頁面裡的 CAMPAIGN：${PART_ERRORS.map(e => `${e.file} ${e.error}`).join("；")}` : "活動時間已到。要換下一檔活動時，修改頁面裡的 CAMPAIGN 再上傳即可。";
+    $("tagline").textContent = broken ? "" : "活動已結束";
+    $("window-text").textContent = broken ? "請檢查活動設定" : PARTS.map(x => x.date).slice(-1)[0];
     $("time-left").hidden = true;
     $("empty-title").textContent = title;
     $("empty-text").textContent = text;
-    $("entry-title").textContent = "GL 黃金豹";
     $("entry-date").textContent = "";
     return;
   }
-  $("promo-title").textContent = p.name;
   $("tagline").textContent = p.tagline;
   $("window-text").textContent = p.date;
   paintTimeLeft();
   $("promo-chip").textContent = p.chip;
   $("promo-chip").hidden = !p.chip;
+  $("amount-field").hidden = !p.input;
+  if(p.input){
+    $("amount-label").textContent = p.input.field;
+    $("amount-hint").textContent = p.input.hint;
+    $("amount").placeholder = p.input.placeholder;
+    $("amount-sign").hidden = !p.input.unit;
+    $("amount").classList.toggle("no-sign", !p.input.unit);
+  }
   $("tier-hint").textContent = p.tierHint;
   $("turnover-na").textContent = p.tierNote;
   $("turnover-na").hidden = !p.tierNote;
   $("footnote").textContent = p.footnote;
   $("footnote").hidden = !p.footnote;
-  $("entry-title").textContent = p.name;
   $("entry-date").textContent = p.date;
   const tiers = $("tiers");
   tiers.style.setProperty("--cols", Math.min(3, p.tiers.length));
   tiers.classList.toggle("pick", p.choose);
-  const payout = t => isPct(t) ? `${t.pct}%<small>回饋</small>` : `$${money(t.bonus)}<small>彩金</small>`;
+  const payout = t => isPct(t) ? `${t.pct}%<small>回饋</small>` : `${money(t.bonus)}<small>彩金</small>`;
+  const gate = t => p.input ? `${p.input.gate} ${p.input.unit}${money(t.min)}` : "免審核 · 秒速到手";
   tiers.innerHTML = p.tiers.map((t, i) => p.choose ? `
   <button type="button" class="tier" data-i="${i}" aria-pressed="false">
     <span class="match">已選</span>
-    <span class="gate">${t.min > 0 ? `滿 $${money(t.min)} · ` : ""}流水 ${t.multiplier} 倍</span>
+    <span class="gate">${t.min > 0 ? `滿 ${p.input.unit}${money(t.min)} · ` : ""}流水 ${t.multiplier} 倍</span>
     <span class="payout">${payout(t)}</span>
     <span class="calc"></span>
   </button>` : `
   <div class="tier" data-i="${i}">
-    <span class="match">適用</span>
-    <span class="gate">儲 $${money(t.min)}</span>
+    <span class="match">${p.input ? "適用" : "可領"}</span>
+    <span class="gate">${gate(t)}</span>
     <span class="payout">${payout(t)}</span>
   </div>`).join("");
   if(p.choose) tiers.querySelectorAll(".tier").forEach(el => el.addEventListener("click", () => choosePlan(Number(el.dataset.i))));
@@ -940,20 +1054,35 @@ document.addEventListener("keydown", e => {
   if(n >= 1 && n <= ACTIVE.tiers.length){ e.preventDefault(); choosePlan(n - 1); }
 });
 
-let boundaryTimer = 0, painted = false;
-function syncClock(){
-  const was = ACTIVE, t = clockNow();
-  ACTIVE = PROMO && t < PROMO.endMs ? PROMO : null;
-  if(!painted || was !== ACTIVE){
+let boundaryTimer = 0, painted = false, liveIds = "", zoomApply = () => {};
+function selectPart(id){
+  wantPart = id;
+  store.set(PART_KEY, id);
+  syncClock(true);
+  if(ACTIVE && ACTIVE.input) $("amount").focus({ preventScroll:true });
+}
+function syncClock(force){
+  const was = ACTIVE, t = clockNow(), live = liveParts(t);
+  const ids = live.map(p => p.id).join(",");
+  ACTIVE = live.find(p => p.id === wantPart) || live[0] || null;
+  if(force === true || !painted || was !== ACTIVE || ids !== liveIds){
+    const before = liveIds.split(",");
+    const gone = painted ? PARTS.filter(p => before.includes(p.id) && !live.includes(p)) : [];
     painted = true;
+    liveIds = ids;
     paintPromo();
     render();
-    if(was && !ACTIVE) toast(`「${was.name}」時間已到，活動已結束`);
+    zoomApply();
+    if(gone.length){
+      const names = gone.map(p => p.tab ? `${p.tab}・${p.short}` : p.name).join("」「");
+      toast(ACTIVE ? `「${names}」時間已到，已自動移除` + (was && was !== ACTIVE ? `，已切換到「${ACTIVE.tab || ACTIVE.name}」` : "") : `「${CAMPAIGN.title}」時間已到，活動已結束`);
+    }
   }else{
     paintTimeLeft();
+    paintTabs();
   }
   clearTimeout(boundaryTimer);
-  const next = PROMO ? [PROMO.startMs, PROMO.endMs].filter(x => x > t)[0] : 0;
+  const next = PARTS.flatMap(p => [p.startMs, p.endMs]).filter(x => x > t).sort((x, y) => x - y)[0];
   if(next) boundaryTimer = setTimeout(syncClock, Math.min(next - t + 50, 2147483000));
 }
 
@@ -1005,7 +1134,8 @@ function render(){
   $("note").classList.toggle("show", !current.ok);
 
   const st = $("status");
-  if(!depositRaw.trim()){ st.textContent = "待輸入"; st.className = "status"; }
+  if(!ACTIVE.input){ st.textContent = "可領取"; st.className = "status hit"; }
+  else if(!depositRaw.trim()){ st.textContent = "待輸入"; st.className = "status"; }
   else if(ACTIVE.choose && idx < 0){ st.textContent = "待選方案"; st.className = "status"; }
   else if(current.ok){ st.textContent = "符合資格"; st.className = "status hit"; }
   else { st.textContent = "未符合資格"; st.className = "status miss"; }
@@ -1064,9 +1194,30 @@ const Zoom = (() => {
   function autoValue(){
     return clamp(Math.min((innerWidth - 16) / REF_W, innerHeight / REF_H));
   }
+  function fitPanel(z0){
+    const panel = document.querySelector(".panel.control"), note = $("note");
+    if(!panel || !panel.offsetParent) return z0;
+    let zz = z0;
+    for(let k = 0; k < 3; k++){
+      const reserve = note && !note.classList.contains("show") ? 34 : 0;
+      const keep = panel.style.height;
+      panel.style.height = "0px";
+      const natural = panel.scrollHeight;
+      panel.style.height = keep;
+      const need = natural + reserve, have = panel.clientHeight;
+      if(need <= have + 1) break;
+      const fixed = innerHeight / zz - have;
+      const next = Math.max(MIN, Math.floor(innerHeight / (need + fixed) * 1000) / 1000);
+      if(next >= zz) break;
+      zz = next;
+      root.style.setProperty("--z", String(zz));
+    }
+    return zz;
+  }
   function apply(){
     z = desktop() ? (manual ?? autoValue()) : 1;
     root.style.setProperty("--z", String(Math.round(z * 1000) / 1000));
+    if(desktop() && manual == null) z = fitPanel(z);
     const label = $("zoom-auto");
     label.textContent = manual == null ? `自動 ${Math.round(z * 100)}%` : `${Math.round(z * 100)}%`;
     label.setAttribute("aria-pressed", manual == null ? "true" : "false");
@@ -1085,6 +1236,7 @@ const Zoom = (() => {
   let raf = 0;
   addEventListener("resize", () => { cancelAnimationFrame(raf); raf = requestAnimationFrame(apply); });
   apply();
+  zoomApply = apply;
   return { apply, set, value:() => z };
 })();
 
@@ -1179,7 +1331,41 @@ window.__selfTest = function(){
   eq(buildRemark(calculate(C,"10000",1)).endsWith(" 限時狂歡 8%回饋-800"), true, "擇一備註格式");
   eq([promoName(calculate(C,"10000",0)), promoName(calculate(C,"10000",1)), promoName(calculate(C,"10000"))], ["限時狂歡 5%回饋", "限時狂歡 8%回饋", "限時狂歡"], "優惠名稱依方案");
 
-  const P = PROMO;
+  const CARNIVAL = {
+    name: "限時狂歡",
+    start: "2026-10-23 00:00",
+    end: "2026-10-26 23:59:59",
+    date: "10/23（五）～10/26（一）23:59",
+    tagline: "儲值贈 5% 或 8%・最高彩金 $58,888",
+    chip: "限時狂歡 · 兩種方案擇一",
+    mode: "擇一",
+    tiers: [
+      { min:1000, pct:5, multiplier:1, rule:"儲值贈 5%，彩金碼量為（本金＋彩金）* 1 倍流水後方可申請出款。" },
+      { min:1000, pct:8, multiplier:3, rule:"儲值贈 8%，彩金碼量為（本金＋彩金）* 3 倍流水後方可申請出款。" },
+    ],
+    cap: 58888,
+    turnover: "本金+彩金",
+    tierNote: "單筆儲值滿 $1,000 · 每一筆皆可申請 · 彩金最高 $58,888",
+    footnote: "5% 出款需（本金＋彩金）1 倍流水 · 8% 出款需（本金＋彩金）3 倍流水",
+    terms: [
+      "儲值後未下注前聯繫客服申請。",
+      "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
+      "完成碼量或耗盡後儲值才可領取下一筆優惠。",
+      "5%回饋（流水 1 倍）與 8%回饋（流水 3 倍）擇一申請。",
+      "單筆彩金最高 $58,888。",
+    ],
+    rules: [
+      "活動時間：10/23（五）～10/26（一）23:59。",
+      "{方案規則}",
+      "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
+      "兩種方案擇一申請，單筆彩金最高 $58,888。",
+      "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+      "儲值後未下注前聯繫客服申請。",
+      "黃金豹保有最終審核權，有權拒絕發放彩金。",
+      "黃金豹保留本活動之最終解釋權。",
+    ],
+  };
+  const P = normalizePromo(CARNIVAL, "carnival").promo;
   eq(P.tiers.map(t => [t.min, t.pct, t.multiplier, t.title]), [[1000,5,1,"5%回饋"],[1000,8,3,"8%回饋"]], "頁面活動：最低 1,000、兩方案");
   const p999 = [calculate(P,"999",0), calculate(P,"999",1)];
   eq(p999.map(r => [r.ok, r.reason]), [[false,"本次儲值 $999 未達最低門檻 $1,000，差額 $1。"],[false,"本次儲值 $999 未達最低門檻 $1,000，差額 $1。"]], "未滿 1,000 擋下");
@@ -1201,8 +1387,35 @@ window.__selfTest = function(){
   bad({ ...base, mode:"隨便" }, "mode", "mode 寫錯");
   bad({ ...base, tiers:[{ min:1, pct:1, multiplier:0 }] }, "multiplier", "方案倍數錯");
 
-  eq([LOADED.ok, PROMO && PROMO.choose, PROMO && PROMO.tiers.length], [true, true, 2], "頁面活動設定正確");
-  eq([PROMO.startMs, PROMO.endMs], [Date.parse("2026-10-23T00:00:00+08:00"), Date.parse("2026-10-26T23:59:59+08:00")], "活動起訖時間");
+  [["1千萬",10000000],["5百萬",5000000],["100萬",1000000],["1.5千萬",15000000],["3億",300000000],["1000萬",10000000]].forEach(([i,o]) => eq(parseAmount(i),o,`parseAmount(${i})`));
+  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["drop168","turnover"]], "兩重活動設定正確");
+  const D = PARTS[0], T2 = PARTS[1];
+  eq([D.input, T2.input.label, T2.input.unit], [null, "當日有效投注", ""], "輸入欄位設定");
+  const d1 = calculate(D, "");
+  eq([d1.ok, d1.bonus, d1.required], [true, 168, 168], "第一重免費 168、彩金 1 倍流水");
+  const dc = buildConfirm(d1), df = buildFinish(d1);
+  if(/本次儲值|當日有效投注/.test(dc + df)) fails.push("第一重不應出現金額欄位");
+  ["申請 【限時突發空投｜第一重】","適用方案:免費空投 168","加贈彩金:168\n","須達碼量:168（彩金）× 1 倍","每位會員限領一次。","曾在黃金豹儲值 1 次以上"].forEach(x => { if(!dc.includes(x)) fails.push(`第一重確認文案缺: ${x}`); });
+  ["申請項目：限時突發空投｜第一重","獲得彩金：168\n","須達碼量：168\n","3.每位會員限領一次。","8.黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!df.includes(x)) fails.push(`第一重結束文案缺: ${x}`); });
+  eq(buildRemark(d1).endsWith(" 限時突發空投｜第一重-168"), true, "第一重備註");
+  [["1000000",1000],["4999999",1000],["5000000",5000],["9999999",5000],["10000000",20000],["1千萬",20000],["500萬",5000],["3億",20000]].forEach(([d,b]) => {
+    const r = calculate(T2, d);
+    eq([r.ok, r.bonus, r.required], [true, b, b], `第二重 calculate(${d})`);
+  });
+  eq(calculate(T2, "999999").reason, "當日有效投注 999,999 未達最低門檻 1,000,000，差額 1。", "第二重未達門檻");
+  eq(calculate(T2, "").reason, "請輸入當日有效投注。", "第二重留空");
+  const tc = buildConfirm(calculate(T2,"10000000")), tf = buildFinish(calculate(T2,"10000000"));
+  ["當日有效投注:10,000,000","適用方案:當日有效投注滿 10,000,000 送 20,000","加贈彩金:20000\n","須達碼量:20000（彩金）× 1 倍","每日限領一次"].forEach(x => { if(!tc.includes(x)) fails.push(`第二重確認文案缺: ${x}`); });
+  ["申請項目：限時突發空投｜第二重","當日有效投注：10,000,000","獲得彩金：20000\n","須達碼量：20000\n","3.每日限領一次。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。"].forEach(x => { if(!tf.includes(x)) fails.push(`第二重結束文案缺: ${x}`); });
+  if(/本次儲值/.test(tc + tf)) fails.push("第二重不應出現本次儲值");
+  [dc, df, tc, tf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
+  eq(buildRemark(calculate(T2,"10000000")).endsWith(" 限時突發空投｜第二重-20000"), true, "第二重備註");
+  eq(liveParts(Date.parse("2026-10-28T19:59:59+08:00")).map(x => x.id), ["drop168","turnover"], "10/28 19:59 兩重都在");
+  eq(liveParts(Date.parse("2026-10-28T20:00:00+08:00")).map(x => x.id), ["turnover"], "10/28 20:00 第一重自動移除");
+  eq(liveParts(Date.parse("2026-11-01T23:59:58+08:00")).map(x => x.id), ["turnover"], "11/01 23:59 第二重還在");
+  eq(liveParts(Date.parse("2026-11-02T00:00:00+08:00")).map(x => x.id), [], "11/02 全部結束");
+  bad({ ...base, input:"none", tiers:[{ pct:5 }] }, "固定彩金", "免輸入只能固定彩金");
+  bad({ ...base, input:"none", tiers:[{ bonus:1 }, { bonus:2 }] }, "固定彩金", "免輸入只能一個方案");
   eq(startLabel(R), "10/20 19:00 開始", "開始時間顯示（台灣時間）");
   eq(timeLeft(90 * 60000), "剩 1 小時 30 分", "剩餘時間");
   eq(timeLeft(5 * 60000), "剩 5 分鐘", "剩餘分鐘");

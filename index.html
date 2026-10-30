@@ -484,6 +484,15 @@ header::after{
 @keyframes music-eq{0%,100%{height:25%}50%{height:100%}}
 @media(max-width:720px){#window-text{white-space:normal;flex:1 1 calc(100% - 20px);min-width:0}}
 @media(max-width:720px){.music-btn{position:absolute;right:0;top:46px;padding:7px 9px}#music-txt{display:none}}
+@media(max-width:560px){
+  header{display:grid;grid-template-columns:auto minmax(0,1fr) auto auto;grid-template-areas:"logo . music status" "titles titles titles titles";align-items:center;column-gap:8px;row-gap:12px}
+  .header-shell{display:contents}
+  .brand-mark{grid-area:logo}
+  .header-shell .titles{grid-area:titles;min-width:0}
+  .titles h1{text-wrap:balance}
+  .music-btn{grid-area:music;position:static}
+  .status{grid-area:status;margin-top:0}
+}
 </style>
 </head>
 <body>
@@ -587,47 +596,50 @@ header::after{
 "use strict";
 
 const CAMPAIGN = {
-  title: "限時突發空投",
+  title: "萬聖瘋狂派彩夜",
   parts: [
     {
-      id: "drop168",
-      tab: "第一重",
-      short: "免費空投 168",
-      name: "限時突發空投｜第一重",
-      start: "2026-10-27 00:00",
-      end: "2026-10-28 20:00",
-      date: "即日起～10/28（三）20:00",
-      tagline: "老玩家回饋・免費空投 $168・彩金 1 倍流水",
-      chip: "曾在黃金豹儲值 1 次以上 · 每位會員限領一次",
-      input: "none",
+      id: "halloween",
+      title: "萬聖瘋狂派彩夜",
+      tab: "萬聖瘋狂派彩夜",
+      short: "儲值送 3%～7%",
+      name: "萬聖瘋狂派彩夜",
+      start: "2026-10-30 00:00",
+      end: "2026-10-31 23:59:59",
+      date: "即刻起～10/31（六）23:59",
+      tagline: "儲值即送最高 7%・全門檻彩金 1 倍流水",
+      chip: "萬聖限定 · 每日可領 3 次",
       tiers: [
-        { bonus:168, label:"免費空投 168" },
+        { min:1000, pct:3 },
+        { min:50000, pct:5 },
+        { min:70000, pct:7 },
       ],
       turnover: "彩金",
       multiplier: 1,
-      tierHint: "免審核 · 不需輸入金額",
-      tierNote: "曾在黃金豹儲值 1 次以上即可領取",
-      footnote: "每位會員限領一次 · 出款需達彩金 1 倍流水 · 10/28 20:00 準時關閉",
+      tierNote: "單筆儲值滿 1,000 即可申請 · 每日可領 3 次",
+      footnote: "每日可領 3 次 · 出款需達彩金 1 倍流水 · 活動至 10/31 23:59",
       terms: [
-        "私訊客服即可申請領取。",
-        "本優惠限曾在黃金豹儲值 1 次以上的會員申請。",
-        "每位會員限領一次。",
+        "儲值後未下注前聯繫客服申請。",
+        "單筆儲值滿 1,000 即可申請，依單筆儲值金額適用最高一階。",
+        "每日可領 3 次。",
+        "完成碼量或耗盡後儲值才可領取下一筆優惠。",
       ],
       rules: [
-        "活動時間：即日起～10/28（三）20:00 止，逾期不補。",
-        "曾在黃金豹儲值 1 次以上的會員，即可免費領取彩金 $168。",
-        "每位會員限領一次。",
+        "活動時間：即刻起～10/31（六）23:59。",
+        "單筆儲值滿 1,000 送 3%、滿 50,000 送 5%、滿 70,000 送 7%，依單筆儲值金額適用最高一階。",
         "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
+        "每日可領 3 次。",
         "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
-        "私訊客服即可申請領取。",
+        "儲值後未下注前聯繫客服申請。",
         "黃金豹保有最終審核權，有權拒絕發放彩金。",
         "黃金豹保留本活動之最終解釋權。",
       ],
     },
     {
       id: "turnover",
-      tab: "第二重",
-      short: "流水加碼 最高 20,000",
+      title: "限時突發空投",
+      tab: "限時突發空投",
+      short: "第二重 流水加碼",
       name: "限時突發空投｜第二重",
       start: "2026-10-27 00:00",
       end: "2026-11-01 23:59:59",
@@ -769,6 +781,7 @@ function normalizePromo(raw, file){
     withDeposit: tiers[0].withDeposit,
     multiplier: tiers[0].multiplier,
     input,
+    title: str(raw.title),
     tab: str(raw.tab),
     short: str(raw.short) || name,
     tierHint: str(raw.tierHint) || (!input ? "不需輸入金額" : input !== DEFAULT_INPUT ? (choose ? `請選擇會員要的方案（可按 1～${tiers.length}）` : `依${input.label}自動套用最高一階`) : choose ? `請選擇會員要的方案（可按 1～${tiers.length}）` : tiers.length > 1 ? "依儲值金額自動套用最高一階" : `儲值滿 $${money(tiers[0].min)} 即可領取`),
@@ -950,7 +963,7 @@ const PARTS = LOADED_PARTS.filter(x => x.ok).map(x => x.promo);
 const PART_ERRORS = LOADED_PARTS.filter(x => !x.ok);
 const PART_KEY = "gl-console-part";
 let wantPart = store.get(PART_KEY) || "";
-const liveParts = (t = clockNow()) => PARTS.filter(p => t < p.endMs);
+const liveParts = (t = clockNow(), list = PARTS) => list.filter(p => t < p.endMs);
 let ACTIVE = null;
 let current = null;
 
@@ -986,8 +999,8 @@ function paintPromo(){
   $("empty-state").hidden = !!p;
   $("grid").hidden = !p;
   $("status").hidden = !p;
-  $("promo-title").textContent = CAMPAIGN.title;
-  $("entry-title").textContent = CAMPAIGN.title;
+  $("promo-title").textContent = p && p.title || CAMPAIGN.title;
+  $("entry-title").textContent = p && p.title || CAMPAIGN.title;
   paintTabs();
   if(!p){
     const broken = !PARTS.length;
@@ -1388,8 +1401,82 @@ window.__selfTest = function(){
   bad({ ...base, tiers:[{ min:1, pct:1, multiplier:0 }] }, "multiplier", "方案倍數錯");
 
   [["1千萬",10000000],["5百萬",5000000],["100萬",1000000],["1.5千萬",15000000],["3億",300000000],["1000萬",10000000]].forEach(([i,o]) => eq(parseAmount(i),o,`parseAmount(${i})`));
-  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["drop168","turnover"]], "兩重活動設定正確");
-  const D = PARTS[0], T2 = PARTS[1];
+  const DROP_PARTS = [
+      {
+        id: "drop168",
+        tab: "第一重",
+        short: "免費空投 168",
+        name: "限時突發空投｜第一重",
+        start: "2026-10-27 00:00",
+        end: "2026-10-28 20:00",
+        date: "即日起～10/28（三）20:00",
+        tagline: "老玩家回饋・免費空投 $168・彩金 1 倍流水",
+        chip: "曾在黃金豹儲值 1 次以上 · 每位會員限領一次",
+        input: "none",
+        tiers: [
+          { bonus:168, label:"免費空投 168" },
+        ],
+        turnover: "彩金",
+        multiplier: 1,
+        tierHint: "免審核 · 不需輸入金額",
+        tierNote: "曾在黃金豹儲值 1 次以上即可領取",
+        footnote: "每位會員限領一次 · 出款需達彩金 1 倍流水 · 10/28 20:00 準時關閉",
+        terms: [
+          "私訊客服即可申請領取。",
+          "本優惠限曾在黃金豹儲值 1 次以上的會員申請。",
+          "每位會員限領一次。",
+        ],
+        rules: [
+          "活動時間：即日起～10/28（三）20:00 止，逾期不補。",
+          "曾在黃金豹儲值 1 次以上的會員，即可免費領取彩金 $168。",
+          "每位會員限領一次。",
+          "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
+          "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+          "私訊客服即可申請領取。",
+          "黃金豹保有最終審核權，有權拒絕發放彩金。",
+          "黃金豹保留本活動之最終解釋權。",
+        ],
+      },
+      {
+        id: "turnover",
+        tab: "第二重",
+        short: "流水加碼 最高 20,000",
+        name: "限時突發空投｜第二重",
+        start: "2026-10-27 00:00",
+        end: "2026-11-01 23:59:59",
+        date: "即日起～11/01（日）23:59",
+        tagline: "當日有效投注達標・最高再送 $20,000",
+        chip: "每日限領一次 · 天天達標天天領",
+        input: { label:"當日有效投注", hint:"請輸入會員當日有效投注", placeholder:"例如 1,000,000", unit:"", gate:"投注" },
+        tiers: [
+          { min:1000000, bonus:1000, label:"當日有效投注滿 1,000,000 送 1,000" },
+          { min:5000000, bonus:5000, label:"當日有效投注滿 5,000,000 送 5,000" },
+          { min:10000000, bonus:20000, label:"當日有效投注滿 10,000,000 送 20,000" },
+        ],
+        turnover: "彩金",
+        multiplier: 1,
+        tierHint: "依當日有效投注自動套用最高一階",
+        tierNote: "三階擇最高一階 · 每日限領一次",
+        footnote: "每日限領一次 · 出款需達彩金 1 倍流水 · 活動至 11/01 23:59",
+        terms: [
+          "當日有效投注達標後聯繫客服申請。",
+          "每日限領一次，依當日有效投注適用最高一階。",
+        ],
+        rules: [
+          "活動時間：即日起～11/01（日）23:59。",
+          "當日有效投注滿 1,000,000 送 $1,000、滿 5,000,000 送 $5,000、滿 10,000,000 送 $20,000，依當日有效投注適用最高一階。",
+          "每日限領一次。",
+          "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
+          "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+          "當日有效投注達標後聯繫客服申請。",
+          "黃金豹保有最終審核權，有權拒絕發放彩金。",
+          "黃金豹保留本活動之最終解釋權。",
+        ],
+      },
+  ];
+  const DROP = DROP_PARTS.map(x => normalizePromo(x, x.id));
+  eq(DROP.map(x => x.ok && x.promo.id), ["drop168","turnover"], "兩重活動設定正確");
+  const D = DROP[0].promo, T2 = DROP[1].promo;
   eq([D.input, T2.input.label, T2.input.unit], [null, "當日有效投注", ""], "輸入欄位設定");
   const d1 = calculate(D, "");
   eq([d1.ok, d1.bonus, d1.required], [true, 168, 168], "第一重免費 168、彩金 1 倍流水");
@@ -1410,11 +1497,29 @@ window.__selfTest = function(){
   if(/本次儲值/.test(tc + tf)) fails.push("第二重不應出現本次儲值");
   [dc, df, tc, tf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
   eq(buildRemark(calculate(T2,"10000000")).endsWith(" 限時突發空投｜第二重-20000"), true, "第二重備註");
-  eq(liveParts(Date.parse("2026-10-28T19:59:59+08:00")).map(x => x.id), ["drop168","turnover"], "10/28 19:59 兩重都在");
-  eq(liveParts(Date.parse("2026-10-28T20:00:00+08:00")).map(x => x.id), ["turnover"], "10/28 20:00 第一重自動移除");
-  eq(liveParts(Date.parse("2026-11-01T23:59:58+08:00")).map(x => x.id), ["turnover"], "11/01 23:59 第二重還在");
-  eq(liveParts(Date.parse("2026-11-02T00:00:00+08:00")).map(x => x.id), [], "11/02 全部結束");
+  eq(liveParts(Date.parse("2026-10-28T19:59:59+08:00"), [D, T2]).map(x => x.id), ["drop168","turnover"], "10/28 19:59 兩重都在");
+  eq(liveParts(Date.parse("2026-10-28T20:00:00+08:00"), [D, T2]).map(x => x.id), ["turnover"], "10/28 20:00 第一重自動移除");
+  eq(liveParts(Date.parse("2026-11-01T23:59:58+08:00"), [D, T2]).map(x => x.id), ["turnover"], "11/01 23:59 第二重還在");
+  eq(liveParts(Date.parse("2026-11-02T00:00:00+08:00"), [D, T2]).map(x => x.id), [], "11/02 全部結束");
   bad({ ...base, input:"none", tiers:[{ pct:5 }] }, "固定彩金", "免輸入只能固定彩金");
+  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["halloween","turnover"]], "萬聖＋第二重設定正確");
+  const T3 = PARTS[1];
+  eq([T3.name, T3.title, T3.input.label, T3.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], ["限時突發空投｜第二重", "限時突發空投", "當日有效投注", [[1000000,1000,1,false],[5000000,5000,1,false],[10000000,20000,1,false]]], "第二重加回設定");
+  eq([calculate(T3, "1千萬").bonus, calculate(T3, "1千萬").required, buildRemark(calculate(T3, "500萬")).endsWith(" 限時突發空投｜第二重-5000")], [20000, 20000, true], "第二重加回試算");
+  const H = PARTS[0];
+  eq([H.input && H.input.label, H.tiers.map(t => [t.min, t.pct, t.multiplier, t.withDeposit]), H.cap], ["本次儲值", [[1000,3,1,false],[50000,5,1,false],[70000,7,1,false]], 0], "萬聖門檻與流水");
+  [["1000",3,30,30],["30000",3,900,900],["49999",3,1499,1499],["50000",5,2500,2500],["69999",5,3499,3499],["70000",7,4900,4900],["100萬",7,70000,70000]].forEach(([d,pct,b,req]) => {
+    const r = calculate(H, d);
+    eq([r.ok, r.tier && r.tier.pct, r.bonus, r.required], [true, pct, b, req], `萬聖 calculate(${d})`);
+  });
+  eq(calculate(H, "999").reason, "本次儲值 $999 未達最低門檻 $1,000，差額 $1。", "萬聖未滿 1,000");
+  const hc = buildConfirm(calculate(H, "50000")), hf = buildFinish(calculate(H, "50000"));
+  ["申請 【萬聖瘋狂派彩夜】","適用方案:儲 50,000 送 5%","本次儲值:$50,000","加贈彩金:2500\n","須達碼量:2500（彩金）× 1 倍","每日可領 3 次。","完成碼量或耗盡後儲值才可領取下一筆優惠。"].forEach(x => { if(!hc.includes(x)) fails.push(`萬聖確認文案缺: ${x}`); });
+  ["申請項目：萬聖瘋狂派彩夜","獲得彩金：2500\n","須達碼量：2500\n","2.單筆儲值滿 1,000 送 3%、滿 50,000 送 5%、滿 70,000 送 7%","3.彩金碼量為彩金 * 1 倍流水後方可申請出款。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","8.黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!hf.includes(x)) fails.push(`萬聖結束文案缺: ${x}`); });
+  [hc, hf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("萬聖彩金與碼量不應有 $ 或逗號"); });
+  eq(buildRemark(calculate(H, "50000")).endsWith(" 萬聖瘋狂派彩夜-5%-2500"), true, "萬聖備註");
+  eq([liveParts(Date.parse("2026-10-31T23:59:58+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-01T00:00:00+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-02T00:00:00+08:00")).map(x => x.id)],
+     [["halloween","turnover"], ["turnover"], []], "萬聖 11/01 00:00 結束、第二重 11/02 00:00 結束");
   bad({ ...base, input:"none", tiers:[{ bonus:1 }, { bonus:2 }] }, "固定彩金", "免輸入只能一個方案");
   eq(startLabel(R), "10/20 19:00 開始", "開始時間顯示（台灣時間）");
   eq(timeLeft(90 * 60000), "剩 1 小時 30 分", "剩餘時間");

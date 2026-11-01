@@ -603,7 +603,7 @@ const CAMPAIGN = {
       title: "第一彈｜見面好彩頭",
       tab: "第一彈｜見面好彩頭",
       short: "不限金額送 111",
-      name: "第一彈｜見面好彩頭",
+      name: "11月歡樂慶典-第一彈",
       start: "2026-11-01 00:00",
       end: "2026-11-05 23:59:59",
       date: "11/1 起～11/5 23:59",
@@ -639,7 +639,7 @@ const CAMPAIGN = {
       title: "第二彈｜滿額加碼",
       tab: "第二彈｜滿額加碼",
       short: "高於門檻送 511～5811",
-      name: "第二彈｜滿額加碼",
+      name: "11月歡樂慶典-第二彈",
       start: "2026-11-01 00:00",
       end: "2026-11-05 23:59:59",
       date: "11/1 起～11/5 23:59",
@@ -1546,8 +1546,8 @@ window.__selfTest = function(){
   eq([m1.ok, m1.bonus, m1.required], [true, 111, 111], "第一彈試算 111");
   const mc = buildConfirm(m1), mf = buildFinish(m1);
   if(/本次儲值/.test(mc + mf)) fails.push("第一彈不應出現本次儲值");
-  ["申請 【第一彈｜見面好彩頭】","適用方案:儲值不限金額送 111","加贈彩金:111\n","須達碼量:111（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!mc.includes(x)) fails.push(`第一彈確認文案缺: ${x}`); });
-  ["申請項目：第一彈｜見面好彩頭","獲得彩金：111\n","須達碼量：111\n","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!mf.includes(x)) fails.push(`第一彈結束文案缺: ${x}`); });
+  ["申請 【11月歡樂慶典-第一彈】","適用方案:儲值不限金額送 111","加贈彩金:111\n","須達碼量:111（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!mc.includes(x)) fails.push(`第一彈確認文案缺: ${x}`); });
+  ["申請項目：11月歡樂慶典-第一彈","獲得彩金：111\n","須達碼量：111\n","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!mf.includes(x)) fails.push(`第一彈結束文案缺: ${x}`); });
   if(/5922|5,922|最高可拿/.test(mc + mf + MEET.rules.join("") + BOOST.rules.join(""))) fails.push("禁止 5922／最高可拿加總句");
   if(/依最高級距發放一次|最高一檔發放一次/.test(MEET.rules.join("") + BOOST.rules.join("") + MEET.terms.join("") + BOOST.terms.join(""))) fails.push("禁止最高級距／最高一檔發放一次句");
   eq([BOOST.input && BOOST.input.label, BOOST.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], ["本次儲值", [[10000,511,1,false],[60000,3511,1,false],[100000,5811,1,false]]], "第二彈門檻與固定彩金");
@@ -1557,11 +1557,11 @@ window.__selfTest = function(){
     else eq([r.ok, r.bonus, r.required], [true, b, b], `第二彈 calculate(${d}) ≥門檻`);
   });
   const bc = buildConfirm(calculate(BOOST, "100000")), bf = buildFinish(calculate(BOOST, "100000"));
-  ["申請 【第二彈｜滿額加碼】","適用方案:儲值高於 100,000 送 5811","本次儲值:$100,000","加贈彩金:5811\n","須達碼量:5811（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!bc.includes(x)) fails.push(`第二彈確認文案缺: ${x}`); });
-  ["申請項目：第二彈｜滿額加碼","獲得彩金：5811\n","須達碼量：5811\n","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!bf.includes(x)) fails.push(`第二彈結束文案缺: ${x}`); });
+  ["申請 【11月歡樂慶典-第二彈】","適用方案:儲值高於 100,000 送 5811","本次儲值:$100,000","加贈彩金:5811\n","須達碼量:5811（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!bc.includes(x)) fails.push(`第二彈確認文案缺: ${x}`); });
+  ["申請項目：11月歡樂慶典-第二彈","獲得彩金：5811\n","須達碼量：5811\n","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!bf.includes(x)) fails.push(`第二彈結束文案缺: ${x}`); });
   [mc, mf, bc, bf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
-  eq(buildRemark(m1).endsWith(" 第一彈｜見面好彩頭-111"), true, "第一彈備註");
-  eq(buildRemark(calculate(BOOST, "100000")).endsWith(" 第二彈｜滿額加碼-5811"), true, "第二彈備註");
+  eq(buildRemark(m1).endsWith(" 11月歡樂慶典-第一彈-111"), true, "第一彈備註");
+  eq(buildRemark(calculate(BOOST, "100000")).endsWith(" 11月歡樂慶典-第二彈-5811"), true, "第二彈備註");
   // liveParts 只過濾 endMs（開始前也會出現在列表）；以活動結束前後為準
   eq([liveParts(Date.parse("2026-11-05T23:59:58+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-06T00:00:00+08:00")).map(x => x.id)],
      [["meet","boost"], []], "11/5 23:59 兩彈仍在、11/6 00:00 結束");

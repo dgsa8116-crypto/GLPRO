@@ -405,6 +405,14 @@ header::after{
   .sparkle.lg2{display:none}
 }
 [hidden]{display:none!important}
+
+.stack-opt{
+  display:flex;align-items:center;gap:8px;margin:0 0 12px;padding:8px 10px;
+  border:1px solid rgba(233,201,118,.28);border-radius:10px;
+  background:rgba(233,201,118,.06);color:var(--champagne-hi);font-size:13px;cursor:pointer;user-select:none
+}
+.stack-opt input{width:16px;height:16px;accent-color:var(--champagne);cursor:pointer;flex:none}
+.stack-opt[hidden]{display:none!important}
 .part-tabs{display:grid;grid-template-columns:repeat(var(--tabs,2),minmax(0,1fr));gap:8px;margin-bottom:8px;flex-shrink:0}
 .part-tab{
   display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:1px;align-items:baseline;min-width:0;padding:6px 12px;cursor:pointer;
@@ -553,6 +561,10 @@ header::after{
         <span class="parsed" id="parsed"></span>
       </div>
       </div>
+      <label class="stack-opt" id="stack-wrap" hidden>
+        <input type="checkbox" id="stack-11" checked>
+        <span>同時領取 1+1（兩彈相加）</span>
+      </label>
       <div class="field-label"><span>優惠方案</span><span class="hint" id="tier-hint"></span></div>
       <div class="tiers" id="tiers"></div>
       <p class="footnote" id="turnover-na"></p>
@@ -899,6 +911,51 @@ function calculate(p, depositRaw, pick = -1){
   return { ...base, ok:true, bonus, capped:p.cap > 0 && raw > p.cap, required };
 }
 
+
+function partById(id){ return PARTS.find(x => x.id === id) || null; }
+function canStack(p){ return !!(p && (p.id === "meet" || p.id === "boost") && partById("meet") && partById("boost")); }
+function stackWanted(){ const el = $("stack-11"); return !!(el && el.checked); }
+function mergeUniqueLists(...lists){
+  const out = [];
+  for(const list of lists){
+    for(const x of list || []){
+      if(x && !out.includes(x)) out.push(x);
+    }
+  }
+  return out;
+}
+function stackPromo(meet, boost){
+  return {
+    name: meet.name + "＋" + boost.name,
+    input: boost.input,
+    terms: mergeUniqueLists(meet.terms, boost.terms),
+    rules: mergeUniqueLists(meet.rules, boost.rules),
+  };
+}
+function calculateStack(depositRaw){
+  const meet = partById("meet"), boost = partById("boost");
+  if(!meet || !boost) return { ok:false, stacked:true, promo:null, tier:null, deposit:0, bonus:0, required:0, reason:"缺少第一彈或第二彈", meet:null, boost:null, stackHint:"" };
+  const m = calculate(meet, "");
+  const b = calculate(boost, depositRaw);
+  const promo = stackPromo(meet, boost);
+  if(!b.ok){
+    if(b.deposit <= 0){
+      return { ok:false, stacked:true, promo, meet:m, boost:b, tier:null, deposit:b.deposit, bonus:0, required:0, reason:b.reason, stackHint:"" };
+    }
+    // 未達第二彈門檻：不擋，降級只出第一彈並提示
+    return {
+      ...m,
+      stacked:false,
+      stackDegraded:true,
+      stackHint:`第二彈未達門檻（${b.reason}）可取消「同時領取 1+1」僅領第一彈，或提高儲值後再合計。`,
+      meet:m,
+      boost:b,
+    };
+  }
+  const bonus = m.bonus + b.bonus;
+  const tier = { min:0, bonus, multiplier:1, withDeposit:false, label:`第一彈 ${plain(m.bonus)}＋第二彈 ${plain(b.bonus)}` };
+  return { ok:true, stacked:true, promo, meet:m, boost:b, tier, deposit:b.deposit, bonus, required:bonus * 1, reason:"", stackHint:"" };
+}
 function buildConfirm(r){
   const p = r.promo;
   const terms = `【活動條款與注意事項】\n${p.terms.join("\n")}\n\n${LEGAL_TERMS}`;
@@ -1046,6 +1103,7 @@ function paintPromo(){
     $("tagline").textContent = broken ? "" : "活動已結束";
     $("window-text").textContent = broken ? "請檢查活動設定" : PARTS.map(x => x.date).slice(-1)[0];
     $("time-left").hidden = true;
+    const sw = $("stack-wrap"); if(sw) sw.hidden = true;
     $("empty-title").textContent = title;
     $("empty-text").textContent = text;
     $("entry-date").textContent = "";
@@ -1056,13 +1114,18 @@ function paintPromo(){
   paintTimeLeft();
   $("promo-chip").textContent = p.chip;
   $("promo-chip").hidden = !p.chip;
-  $("amount-field").hidden = !p.input;
-  if(p.input){
-    $("amount-label").textContent = p.input.field;
-    $("amount-hint").textContent = p.input.hint;
-    $("amount").placeholder = p.input.placeholder;
-    $("amount-sign").hidden = !p.input.unit;
-    $("amount").classList.toggle("no-sign", !p.input.unit);
+  const stackable = canStack(p);
+  const wrap = $("stack-wrap");
+  if(wrap) wrap.hidden = !stackable;
+  const wantStack = stackable && stackWanted();
+  const amountSrc = p.input || (wantStack ? (partById("boost") && partById("boost").input) : null);
+  $("amount-field").hidden = !amountSrc;
+  if(amountSrc){
+    $("amount-label").textContent = amountSrc.field;
+    $("amount-hint").textContent = amountSrc.hint;
+    $("amount").placeholder = amountSrc.placeholder;
+    $("amount-sign").hidden = !amountSrc.unit;
+    $("amount").classList.toggle("no-sign", !amountSrc.unit);
   }
   $("tier-hint").textContent = p.tierHint;
   $("turnover-na").textContent = p.tierNote;
@@ -1109,7 +1172,7 @@ function selectPart(id){
   wantPart = id;
   store.set(PART_KEY, id);
   syncClock(true);
-  if(ACTIVE && ACTIVE.input) $("amount").focus({ preventScroll:true });
+  if(ACTIVE && (ACTIVE.input || (canStack(ACTIVE) && stackWanted()))) $("amount").focus({ preventScroll:true });
 }
 function syncClock(force){
   const was = ACTIVE, t = clockNow(), live = liveParts(t);
@@ -1144,11 +1207,24 @@ function bindAmountField(id){
   });
 }
 bindAmountField("amount");
+(function bindStack(){
+  const el = $("stack-11");
+  if(!el) return;
+  const KEY = "gl-console-stack11";
+  const saved = store.get(KEY);
+  el.checked = saved !== "0";
+  el.addEventListener("change", () => {
+    store.set(KEY, el.checked ? "1" : "0");
+    if(ACTIVE) paintPromo();
+    render();
+  });
+})();
 
 function render(){
   if(!ACTIVE){ current = null; return; }
   const depositRaw = $("amount").value;
-  current = calculate(ACTIVE, depositRaw, pickOf(ACTIVE));
+  const usingStack = canStack(ACTIVE) && stackWanted();
+  current = usingStack ? calculateStack(depositRaw) : calculate(ACTIVE, depositRaw, pickOf(ACTIVE));
 
   const deposit = current.deposit;
   const p1 = $("parsed");
@@ -1156,7 +1232,7 @@ function render(){
   p1.textContent = showParsed1 ? `= ${money(deposit)}` : "";
   p1.classList.toggle("show", showParsed1);
 
-  const idx = current.tier ? ACTIVE.tiers.indexOf(current.tier) : -1;
+  const idx = (!usingStack && current.tier) ? ACTIVE.tiers.indexOf(current.tier) : (usingStack && current.boost && current.boost.tier && ACTIVE.id === "boost" ? ACTIVE.tiers.indexOf(current.boost.tier) : -1);
   document.querySelectorAll(".tier").forEach(el => {
     const i = Number(el.dataset.i), applies = i === idx;
     el.classList.toggle("reached", applies);
@@ -1180,13 +1256,14 @@ function render(){
   $("out-gate").textContent = current.tier ? tierLabel(current.tier) : INELIGIBLE;
   $("out-remark").textContent = buildRemark(current);
 
-  $("note").textContent = current.reason;
-  $("note").classList.toggle("show", !current.ok);
+  $("note").textContent = current.stackHint || current.reason;
+  $("note").classList.toggle("show", !current.ok || !!current.stackHint);
 
   const st = $("status");
-  if(!ACTIVE.input){ st.textContent = "可領取"; st.className = "status hit"; }
+  const needAmt = !!(ACTIVE.input) || usingStack;
+  if(!needAmt){ st.textContent = "可領取"; st.className = "status hit"; }
   else if(!depositRaw.trim()){ st.textContent = "待輸入"; st.className = "status"; }
-  else if(ACTIVE.choose && idx < 0){ st.textContent = "待選方案"; st.className = "status"; }
+  else if(!usingStack && ACTIVE.choose && idx < 0){ st.textContent = "待選方案"; st.className = "status"; }
   else if(current.ok){ st.textContent = "符合資格"; st.className = "status hit"; }
   else { st.textContent = "未符合資格"; st.className = "status miss"; }
 
@@ -1562,6 +1639,18 @@ window.__selfTest = function(){
   [mc, mf, bc, bf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
   eq(buildRemark(m1).endsWith(" 11月歡樂慶典-第一彈-111"), true, "第一彈備註");
   eq(buildRemark(calculate(BOOST, "100000")).endsWith(" 11月歡樂慶典-第二彈-5811"), true, "第二彈備註");
+  const stackSum = calculateStack("100000");
+  eq([stackSum.ok, stackSum.bonus, stackSum.required, stackSum.meet.bonus, stackSum.boost.bonus], [true, 111 + 5811, 111 + 5811, 111, 5811], "1+1 勾選合計（100000→111+5811）");
+  const sc = buildConfirm(stackSum), sf = buildFinish(stackSum);
+  ["申請 【11月歡樂慶典-第一彈＋11月歡樂慶典-第二彈】","適用方案:第一彈 111＋第二彈 5811","本次儲值:$100,000","加贈彩金:" + plain(111 + 5811) + "\n","須達碼量:" + plain(111 + 5811) + "（彩金）× 1 倍","1+1 雙重疊加","即贈彩金 111","儲值高於 10,000 贈 511","高於 60,000 贈 3,511","高於 100,000 贈 5,811"].forEach(x => { if(!sc.includes(x)) fails.push(`1+1確認文案缺: ${x}`); });
+  ["申請項目：11月歡樂慶典-第一彈＋11月歡樂慶典-第二彈","獲得彩金：" + plain(111 + 5811) + "\n","須達碼量：" + plain(111 + 5811) + "\n","即贈彩金 111","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!sf.includes(x)) fails.push(`1+1結束文案缺: ${x}`); });
+  eq([stackSum.promo.terms.join("|").includes("即贈彩金 111"), stackSum.promo.terms.join("|").includes("儲值高於 10,000 贈 511")], [true, true], "1+1 terms 合併 meet+boost");
+  eq([stackSum.promo.rules.join("|").includes("即贈彩金 111"), stackSum.promo.rules.join("|").includes("儲值高於 10,000 贈 511")], [true, true], "1+1 rules 合併兩彈");
+  const soft = calculateStack("9999");
+  eq([soft.ok, soft.bonus, !!soft.stackHint, soft.stackDegraded], [true, 111, true, true], "1+1 未達第二彈門檻降級第一彈（不擋）");
+  eq(calculate(MEET, "").bonus, 111, "未勾選路徑：單檔 meet 仍 111");
+  eq(calculate(BOOST, "100000").bonus, 5811, "未勾選路徑：單檔 boost 仍 5811");
+  eq(PARTS[2].id, "turnover", "turnover 分頁存在且計算不受 stack 函式影響");
   // liveParts 只過濾 endMs（開始前也會出現在列表）；以活動結束前後為準
   eq([liveParts(Date.parse("2026-11-05T23:59:58+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-06T00:00:00+08:00")).map(x => x.id)],
      [["meet","boost"], []], "11/5 23:59 兩彈仍在、11/6 00:00 結束");

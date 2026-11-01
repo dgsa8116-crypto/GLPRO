@@ -670,11 +670,14 @@ const CAMPAIGN = {
         "儲值高於 10,000 贈 511；高於 60,000 贈 3,511；高於 100,000 贈 5,811。",
         "1+1 雙重疊加：第一彈與第二彈可同時領取。",
         "全部彩金僅需 1 倍流水（碼量＝彩金 × 1）。",
+        "完成該優惠碼量後才可申請下一筆優惠。",
         "活動時間：11/1 起～11/5 23:59；儲值後未下注前聯繫客服申請。"
       ],
       rules: [
         "活動時間：11/1 起～11/5 23:59。",
         "儲值高於 10,000 贈 511；高於 60,000 贈 3,511；高於 100,000 贈 5,811。",
+        "第一彈：僅限申請一次。",
+        "第二彈：完成該優惠碼量後才可申請下一筆優惠。",
         "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
         "1+1 雙重疊加：第一彈與第二彈可同時領取。",
         "儲值後未下注前聯繫客服申請。",
@@ -728,6 +731,7 @@ const money = n => n.toLocaleString("en-US");
 const plain = n => String(Math.floor(n));
 const PLAN_RULE = "{方案規則}";
 const INELIGIBLE = "不符合資格";
+const BOOST_E2_INTERNAL = "第二彈尚未完成該優惠碼量，暫不核發下一筆第二彈。"; // 客服／後台對內；非本頁自動擋
 const LEGAL_TERMS = `一、誠信原則：本平台所有優惠活動僅針對一般玩家所設立。若發現會員採取不正當手段、利用程式漏洞或違反遊戲規則以套取紅利，本平台有權收回所有點數及紅利，情節嚴重者將採取永久凍結帳號處置。
 
 二、公平審核：為維護遊戲公平性，本平台將對會員投注行為進行嚴格監控。若經查證有違背誠信、欺騙或利用規則進行「無風險獲利」之行為，本公司保留無限期審核、扣回優惠、拒絕發放彩金、修改活動內容等最終解釋權。`;
@@ -1477,7 +1481,7 @@ window.__selfTest = function(){
     terms: [
       "儲值後未下注前聯繫客服申請。",
       "單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。",
-      "完成碼量或耗盡後儲值才可領取下一筆優惠。",
+      "完成該優惠碼量後才可申請下一筆優惠。",
       "5%回饋（流水 1 倍）與 8%回饋（流水 3 倍）擇一申請。",
       "單筆彩金最高 $58,888。",
     ],
@@ -1504,7 +1508,7 @@ window.__selfTest = function(){
   if((f5 + f8).includes("彩票")) fails.push("不應出現彩票遊戲館");
   if((f5 + f8).includes(PLAN_RULE)) fails.push("方案規則佔位字不應出現");
   const c5 = buildConfirm(calculate(P,"10000",0));
-  ["適用方案:5%回饋（流水 1 倍）","單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。\n完成碼量或耗盡後儲值才可領取下一筆優惠。\n"].forEach(x => { if(!c5.includes(x)) fails.push(`頁面活動確認文案缺: ${x}`); });
+  ["適用方案:5%回饋（流水 1 倍）","單筆儲值滿 $1,000 即可申請，每一筆儲值皆可申請。\n完成該優惠碼量後才可申請下一筆優惠。\n"].forEach(x => { if(!c5.includes(x)) fails.push(`頁面活動確認文案缺: ${x}`); });
   bad({ ...base, rules:["{方案規則}"] }, "rule", "用了方案規則但方案沒寫 rule");
   const M = normalizePromo({ ...base, mode:"擇一", tiers:[{ min:3000, pct:5, multiplier:2, turnover:"彩金" }, { pct:6 }] }, "m.json").promo;
   eq([M.tiers[0].min, M.tiers[1].min, M.tiers[0].withDeposit, M.tiers[1].multiplier], [3000, 0, false, 1], "擇一方案可各自設門檻與流水");
@@ -1628,6 +1632,14 @@ window.__selfTest = function(){
   if(/5922|5,922|最高可拿/.test(mc + mf + MEET.rules.join("") + BOOST.rules.join(""))) fails.push("禁止 5922／最高可拿加總句");
   if(/依最高級距發放一次|最高一檔發放一次/.test(MEET.rules.join("") + BOOST.rules.join("") + MEET.terms.join("") + BOOST.terms.join(""))) fails.push("禁止最高級距／最高一檔發放一次句");
   eq([BOOST.input && BOOST.input.label, BOOST.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], ["本次儲值", [[10000,511,1,false],[60000,3511,1,false],[100000,5811,1,false]]], "第二彈門檻與固定彩金");
+  eq(BOOST.terms.some(t => t.includes("完成該優惠碼量後才可申請下一筆優惠")), true, "第二彈 terms 含新口徑下一筆");
+  eq(BOOST.rules.includes("第一彈：僅限申請一次。"), true, "第二彈 rules 分條第一彈僅一次");
+  eq(BOOST.rules.includes("第二彈：完成該優惠碼量後才可申請下一筆優惠。"), true, "第二彈 rules 分條下一筆第二彈");
+  eq(BOOST.rules.some(r => r.includes("彩金碼量為彩金 * 1 倍流水後方可申請出款")), true, "保留流水後出款句");
+  eq(BOOST_E2_INTERNAL, "第二彈尚未完成該優惠碼量，暫不核發下一筆第二彈。", "E2 對內口徑");
+  eq(calculate(BOOST, "100000").ok, true, "E2 口徑≠本頁自動擋（仍可算第二彈）");
+  if(/申請狀態機|applyCount|applicationState/.test(String(calculate) + String(calculateStack))) fails.push("未引入申請狀態機／次數");
+
   [["9999",false],["10000",511],["59999",511],["60000",3511],["99999",3511],["100000",5811],["200000",5811]].forEach(([d,b]) => {
     const r = calculate(BOOST, d);
     if(b === false) eq(r.ok, false, `第二彈未達門檻 calculate(${d})`);

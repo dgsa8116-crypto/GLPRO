@@ -630,14 +630,14 @@ const CAMPAIGN = {
       tierNote: "活動期間儲值不限金額即可申請 · 彩金 1 倍流水",
       footnote: "出款需達彩金 1 倍流水 · 可與第二彈疊加 · 活動至 11/5 23:59",
       terms: [
-        "活動期間儲值不限金額，即贈彩金 111，無門檻。",
+        "活動期間儲值不限金額，即贈彩金 111，無門檻。僅限申請一次。",
         "1+1 雙重疊加：第一彈與第二彈可同時領取。",
         "全部彩金僅需 1 倍流水（碼量＝彩金 × 1）。",
         "活動時間：11/1 起～11/5 23:59；儲值後未下注前聯繫客服申請。"
       ],
       rules: [
         "活動時間：11/1 起～11/5 23:59。",
-        "活動期間儲值不限金額，即贈彩金 111，無門檻。",
+        "活動期間儲值不限金額，即贈彩金 111，無門檻。僅限申請一次。",
         "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
         "1+1 雙重疊加：第一彈與第二彈可同時領取。",
         "儲值後未下注前聯繫客服申請。",
@@ -1644,6 +1644,8 @@ window.__selfTest = function(){
   const sc = buildConfirm(stackSum), sf = buildFinish(stackSum);
   ["申請 【11月歡樂慶典-第一彈＋11月歡樂慶典-第二彈】","適用方案:第一彈 111＋第二彈 5811","本次儲值:$100,000","加贈彩金:" + plain(111 + 5811) + "\n","須達碼量:" + plain(111 + 5811) + "（彩金）× 1 倍","1+1 雙重疊加","即贈彩金 111","儲值高於 10,000 贈 511","高於 60,000 贈 3,511","高於 100,000 贈 5,811"].forEach(x => { if(!sc.includes(x)) fails.push(`1+1確認文案缺: ${x}`); });
   ["申請項目：11月歡樂慶典-第一彈＋11月歡樂慶典-第二彈","獲得彩金：" + plain(111 + 5811) + "\n","須達碼量：" + plain(111 + 5811) + "\n","即贈彩金 111","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!sf.includes(x)) fails.push(`1+1結束文案缺: ${x}`); });
+    if(!sc.includes("僅限申請一次") || !sf.includes("僅限申請一次")) fails.push("1+1 合併須含第一彈「僅限申請一次」");
+  if(!buildConfirm(m1).includes("僅限申請一次") || !buildFinish(m1).includes("僅限申請一次")) fails.push("第一彈確認／結束須含「僅限申請一次」");
   eq([stackSum.promo.terms.join("|").includes("即贈彩金 111"), stackSum.promo.terms.join("|").includes("儲值高於 10,000 贈 511")], [true, true], "1+1 terms 合併 meet+boost");
   eq([stackSum.promo.rules.join("|").includes("即贈彩金 111"), stackSum.promo.rules.join("|").includes("儲值高於 10,000 贈 511")], [true, true], "1+1 rules 合併兩彈");
   const soft = calculateStack("9999");

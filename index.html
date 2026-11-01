@@ -596,43 +596,79 @@ header::after{
 "use strict";
 
 const CAMPAIGN = {
-  title: "萬聖瘋狂派彩夜",
+  title: "11月歡樂慶典",
   parts: [
     {
-      id: "halloween",
-      title: "萬聖瘋狂派彩夜",
-      tab: "萬聖瘋狂派彩夜",
-      short: "儲值送 3%～7%",
-      name: "萬聖瘋狂派彩夜",
-      start: "2026-10-30 00:00",
-      end: "2026-10-31 23:59:59",
-      date: "即刻起～10/31（六）23:59",
-      tagline: "儲值即送最高 7%・全門檻彩金 1 倍流水",
-      chip: "萬聖限定 · 每日可領 3 次",
+      id: "meet",
+      title: "第一彈｜見面好彩頭",
+      tab: "第一彈｜見面好彩頭",
+      short: "不限金額送 111",
+      name: "第一彈｜見面好彩頭",
+      start: "2026-11-01 00:00",
+      end: "2026-11-05 23:59:59",
+      date: "11/1 起～11/5 23:59",
+      tagline: "見面禮不限金額送 111・彩金 1 倍流水・可與第二彈疊加",
+      chip: "見面好彩頭 · 不限金額",
+      input: "none",
       tiers: [
-        { min:1000, pct:3 },
-        { min:50000, pct:5 },
-        { min:70000, pct:7 },
+        { min:0, bonus:111, label:"儲值不限金額送 111" },
       ],
       turnover: "彩金",
       multiplier: 1,
-      tierNote: "單筆儲值滿 1,000 即可申請 · 每日可領 3 次",
-      footnote: "每日可領 3 次 · 出款需達彩金 1 倍流水 · 活動至 10/31 23:59",
+      tierNote: "活動期間儲值不限金額即可申請 · 彩金 1 倍流水",
+      footnote: "出款需達彩金 1 倍流水 · 可與第二彈疊加 · 活動至 11/5 23:59",
       terms: [
-        "儲值後未下注前聯繫客服申請。",
-        "單筆儲值滿 1,000 即可申請，依單筆儲值金額適用最高一階。",
-        "每日可領 3 次。",
-        "完成碼量或耗盡後儲值才可領取下一筆優惠。",
+        "活動期間儲值不限金額，即贈彩金 111，無門檻。",
+        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
+        "全部彩金僅需 1 倍流水（碼量＝彩金 × 1）。",
+        "活動時間：11/1 起～11/5 23:59；儲值後未下注前聯繫客服申請。"
       ],
       rules: [
-        "活動時間：即刻起～10/31（六）23:59。",
-        "單筆儲值滿 1,000 送 3%、滿 50,000 送 5%、滿 70,000 送 7%，依單筆儲值金額適用最高一階。",
+        "活動時間：11/1 起～11/5 23:59。",
+        "活動期間儲值不限金額，即贈彩金 111，無門檻。",
         "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
-        "每日可領 3 次。",
-        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
         "儲值後未下注前聯繫客服申請。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
         "黃金豹保有最終審核權，有權拒絕發放彩金。",
-        "黃金豹保留本活動之最終解釋權。",
+        "黃金豹保留本活動之最終解釋權。"
+      ],
+    },
+    {
+      id: "boost",
+      title: "第二彈｜滿額加碼",
+      tab: "第二彈｜滿額加碼",
+      short: "高於門檻送 511～5811",
+      name: "第二彈｜滿額加碼",
+      start: "2026-11-01 00:00",
+      end: "2026-11-05 23:59:59",
+      date: "11/1 起～11/5 23:59",
+      tagline: "滿額加碼三檔・彩金 1 倍流水・可與第一彈疊加",
+      chip: "滿額加碼 · 三檔門檻",
+      tiers: [
+        { min:10000, bonus:511, label:"儲值高於 10,000 送 511" },
+        { min:60000, bonus:3511, label:"儲值高於 60,000 送 3511" },
+        { min:100000, bonus:5811, label:"儲值高於 100,000 送 5811" },
+      ],
+      turnover: "彩金",
+      multiplier: 1,
+      tierNote: "三檔門檻（文案「高於」；系統判定 ≥ 門檻）· 彩金 1 倍流水",
+      footnote: "出款需達彩金 1 倍流水 · 可與第一彈疊加 · 活動至 11/5 23:59",
+      terms: [
+        "儲值高於 10,000 贈 511；高於 60,000 贈 3,511；高於 100,000 贈 5,811。",
+        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
+        "全部彩金僅需 1 倍流水（碼量＝彩金 × 1）。",
+        "活動時間：11/1 起～11/5 23:59；儲值後未下注前聯繫客服申請。"
+      ],
+      rules: [
+        "活動時間：11/1 起～11/5 23:59。",
+        "儲值高於 10,000 贈 511；高於 60,000 贈 3,511；高於 100,000 贈 5,811。",
+        "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
+        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
+        "儲值後未下注前聯繫客服申請。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。"
       ],
     },
     {
@@ -671,9 +707,10 @@ const CAMPAIGN = {
         "黃金豹保有最終審核權，有權拒絕發放彩金。",
         "黃金豹保留本活動之最終解釋權。",
       ],
-    },
+    }
   ],
 };
+
 
 const money = n => n.toLocaleString("en-US");
 const plain = n => String(Math.floor(n));
@@ -1502,24 +1539,32 @@ window.__selfTest = function(){
   eq(liveParts(Date.parse("2026-11-01T23:59:58+08:00"), [D, T2]).map(x => x.id), ["turnover"], "11/01 23:59 第二重還在");
   eq(liveParts(Date.parse("2026-11-02T00:00:00+08:00"), [D, T2]).map(x => x.id), [], "11/02 全部結束");
   bad({ ...base, input:"none", tiers:[{ pct:5 }] }, "固定彩金", "免輸入只能固定彩金");
-  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["halloween","turnover"]], "萬聖＋第二重設定正確");
-  const T3 = PARTS[1];
-  eq([T3.name, T3.title, T3.input.label, T3.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], ["限時突發空投｜第二重", "限時突發空投", "當日有效投注", [[1000000,1000,1,false],[5000000,5000,1,false],[10000000,20000,1,false]]], "第二重加回設定");
-  eq([calculate(T3, "1千萬").bonus, calculate(T3, "1千萬").required, buildRemark(calculate(T3, "500萬")).endsWith(" 限時突發空投｜第二重-5000")], [20000, 20000, true], "第二重加回試算");
-  const H = PARTS[0];
-  eq([H.input && H.input.label, H.tiers.map(t => [t.min, t.pct, t.multiplier, t.withDeposit]), H.cap], ["本次儲值", [[1000,3,1,false],[50000,5,1,false],[70000,7,1,false]], 0], "萬聖門檻與流水");
-  [["1000",3,30,30],["30000",3,900,900],["49999",3,1499,1499],["50000",5,2500,2500],["69999",5,3499,3499],["70000",7,4900,4900],["100萬",7,70000,70000]].forEach(([d,pct,b,req]) => {
-    const r = calculate(H, d);
-    eq([r.ok, r.tier && r.tier.pct, r.bonus, r.required], [true, pct, b, req], `萬聖 calculate(${d})`);
+  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["meet","boost","turnover"]], "11月歡樂慶典 meet+boost＋空投設定正確");
+  const MEET = PARTS[0], BOOST = PARTS[1];
+  eq([MEET.input, MEET.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], [null, [[0,111,1,false]]], "第一彈免輸入固定 111");
+  const m1 = calculate(MEET, "");
+  eq([m1.ok, m1.bonus, m1.required], [true, 111, 111], "第一彈試算 111");
+  const mc = buildConfirm(m1), mf = buildFinish(m1);
+  if(/本次儲值/.test(mc + mf)) fails.push("第一彈不應出現本次儲值");
+  ["申請 【第一彈｜見面好彩頭】","適用方案:儲值不限金額送 111","加贈彩金:111\n","須達碼量:111（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!mc.includes(x)) fails.push(`第一彈確認文案缺: ${x}`); });
+  ["申請項目：第一彈｜見面好彩頭","獲得彩金：111\n","須達碼量：111\n","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!mf.includes(x)) fails.push(`第一彈結束文案缺: ${x}`); });
+  if(/5922|5,922|最高可拿/.test(mc + mf + MEET.rules.join("") + BOOST.rules.join(""))) fails.push("禁止 5922／最高可拿加總句");
+  if(/依最高級距發放一次|最高一檔發放一次/.test(MEET.rules.join("") + BOOST.rules.join("") + MEET.terms.join("") + BOOST.terms.join(""))) fails.push("禁止最高級距／最高一檔發放一次句");
+  eq([BOOST.input && BOOST.input.label, BOOST.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], ["本次儲值", [[10000,511,1,false],[60000,3511,1,false],[100000,5811,1,false]]], "第二彈門檻與固定彩金");
+  [["9999",false],["10000",511],["59999",511],["60000",3511],["99999",3511],["100000",5811],["200000",5811]].forEach(([d,b]) => {
+    const r = calculate(BOOST, d);
+    if(b === false) eq(r.ok, false, `第二彈未達門檻 calculate(${d})`);
+    else eq([r.ok, r.bonus, r.required], [true, b, b], `第二彈 calculate(${d}) ≥門檻`);
   });
-  eq(calculate(H, "999").reason, "本次儲值 $999 未達最低門檻 $1,000，差額 $1。", "萬聖未滿 1,000");
-  const hc = buildConfirm(calculate(H, "50000")), hf = buildFinish(calculate(H, "50000"));
-  ["申請 【萬聖瘋狂派彩夜】","適用方案:儲 50,000 送 5%","本次儲值:$50,000","加贈彩金:2500\n","須達碼量:2500（彩金）× 1 倍","每日可領 3 次。","完成碼量或耗盡後儲值才可領取下一筆優惠。"].forEach(x => { if(!hc.includes(x)) fails.push(`萬聖確認文案缺: ${x}`); });
-  ["申請項目：萬聖瘋狂派彩夜","獲得彩金：2500\n","須達碼量：2500\n","2.單筆儲值滿 1,000 送 3%、滿 50,000 送 5%、滿 70,000 送 7%","3.彩金碼量為彩金 * 1 倍流水後方可申請出款。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","8.黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!hf.includes(x)) fails.push(`萬聖結束文案缺: ${x}`); });
-  [hc, hf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("萬聖彩金與碼量不應有 $ 或逗號"); });
-  eq(buildRemark(calculate(H, "50000")).endsWith(" 萬聖瘋狂派彩夜-5%-2500"), true, "萬聖備註");
-  eq([liveParts(Date.parse("2026-10-31T23:59:58+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-01T00:00:00+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-02T00:00:00+08:00")).map(x => x.id)],
-     [["halloween","turnover"], ["turnover"], []], "萬聖 11/01 00:00 結束、第二重 11/02 00:00 結束");
+  const bc = buildConfirm(calculate(BOOST, "100000")), bf = buildFinish(calculate(BOOST, "100000"));
+  ["申請 【第二彈｜滿額加碼】","適用方案:儲值高於 100,000 送 5811","本次儲值:$100,000","加贈彩金:5811\n","須達碼量:5811（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!bc.includes(x)) fails.push(`第二彈確認文案缺: ${x}`); });
+  ["申請項目：第二彈｜滿額加碼","獲得彩金：5811\n","須達碼量：5811\n","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!bf.includes(x)) fails.push(`第二彈結束文案缺: ${x}`); });
+  [mc, mf, bc, bf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
+  eq(buildRemark(m1).endsWith(" 第一彈｜見面好彩頭-111"), true, "第一彈備註");
+  eq(buildRemark(calculate(BOOST, "100000")).endsWith(" 第二彈｜滿額加碼-5811"), true, "第二彈備註");
+  // liveParts 只過濾 endMs（開始前也會出現在列表）；以活動結束前後為準
+  eq([liveParts(Date.parse("2026-11-05T23:59:58+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-06T00:00:00+08:00")).map(x => x.id)],
+     [["meet","boost"], []], "11/5 23:59 兩彈仍在、11/6 00:00 結束");
   bad({ ...base, input:"none", tiers:[{ bonus:1 }, { bonus:2 }] }, "固定彩金", "免輸入只能一個方案");
   eq(startLabel(R), "10/20 19:00 開始", "開始時間顯示（台灣時間）");
   eq(timeLeft(90 * 60000), "剩 1 小時 30 分", "剩餘時間");

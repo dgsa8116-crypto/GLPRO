@@ -413,6 +413,14 @@ header::after{
 }
 .stack-opt input{width:16px;height:16px;accent-color:var(--champagne);cursor:pointer;flex:none}
 .stack-opt[hidden]{display:none!important}
+.combo{margin:0 0 12px;padding:8px 10px;border:1px solid rgba(233,201,118,.28);border-radius:10px;background:rgba(233,201,118,.06)}
+.combo-head{display:flex;justify-content:space-between;gap:8px;font-size:13px;color:var(--champagne-hi);margin-bottom:6px}
+.combo-head small{font-family:var(--mono);font-size:11px;color:var(--ink-faint)}
+.combo-head button{background:none;border:0;color:var(--ink-faint);font-size:11px;cursor:pointer;text-decoration:underline;padding:0}
+.combo-list{display:flex;flex-wrap:wrap;gap:6px}
+.combo-item{display:flex;align-items:center;gap:6px;padding:4px 9px;border:1px solid rgba(233,201,118,.22);border-radius:8px;font-size:12.5px;color:var(--ink-faint);cursor:pointer;user-select:none}
+.combo-item input{width:15px;height:15px;accent-color:var(--champagne);cursor:pointer;margin:0}
+.combo-item.on{color:#120e04;border-color:transparent;background:linear-gradient(100deg,var(--ember),var(--champagne) 45%,var(--champagne-hi))}
 .part-tabs{display:grid;grid-template-columns:repeat(var(--tabs,2),minmax(0,1fr));gap:8px;margin-bottom:8px;flex-shrink:0}
 .part-tab{
   display:grid;grid-template-columns:auto minmax(0,1fr);column-gap:8px;row-gap:1px;align-items:baseline;min-width:0;padding:6px 12px;cursor:pointer;
@@ -551,6 +559,10 @@ header::after{
       <div class="panel-head"><span class="mark">✦</span><h2>三年後的大雪</h2><span class="rule"></span></div>
 
       <div class="part-tabs" id="part-tabs" role="group" aria-label="活動切換" hidden></div>
+      <div class="combo" id="combo" hidden>
+        <div class="combo-head"><span>合併申請 <small>勾 2 項以上即合計</small></span><button type="button" id="combo-clear">清除勾選</button></div>
+        <div class="combo-list" id="combo-list"></div>
+      </div>
       <span class="vip-chip" id="promo-chip"></span>
 
       <div id="amount-field">
@@ -559,6 +571,22 @@ header::after{
         <span class="sign" id="amount-sign">$</span>
         <input id="amount" class="amt-input" type="text" inputmode="numeric" placeholder="例如 12,000" autocomplete="off">
         <span class="parsed" id="parsed"></span>
+      </div>
+      </div>
+      <div id="extra-field" hidden>
+      <div class="field-label"><span id="extra-label"></span><span class="hint" id="extra-hint"></span></div>
+      <div class="amount-wrap">
+        <span class="sign" id="extra-sign">$</span>
+        <input id="extra" class="amt-input" type="text" inputmode="numeric" autocomplete="off">
+        <span class="parsed" id="extra-parsed"></span>
+      </div>
+      </div>
+      <div id="flow-field" hidden>
+      <div class="field-label"><span id="flow-label">儲值後有效流水</span><span class="hint" id="flow-hint"></span></div>
+      <div class="amount-wrap">
+        <span class="sign">$</span>
+        <input id="flow" class="amt-input" type="text" inputmode="numeric" placeholder="例如 110,000" autocomplete="off">
+        <span class="parsed" id="flow-parsed"></span>
       </div>
       </div>
       <label class="stack-opt" id="stack-wrap" hidden>
@@ -608,121 +636,195 @@ header::after{
 "use strict";
 
 const CAMPAIGN = {
-  title: "11月歡樂慶典",
+  title: "1111 光棍脫單狂歡節",
+  copyName: "1111光棍脫單狂歡節", // 「優惠名稱」按鈕複製的固定文字
   parts: [
     {
-      id: "meet",
-      title: "第一彈｜見面好彩頭",
-      tab: "第一彈｜見面好彩頭",
-      short: "不限金額送 111",
-      name: "11月歡樂慶典-第一彈",
-      start: "2026-11-01 00:00",
-      end: "2026-11-05 23:59:59",
-      date: "11/1 起～11/5 23:59",
-      tagline: "見面禮不限金額送 111・彩金 1 倍流水・可與第二彈疊加",
-      chip: "見面好彩頭 · 不限金額",
+      id: "d1",
+      title: "第一重｜天天簽到・白嫖起飛",
+      tab: "第一重",
+      short: "每日登入送 11",
+      name: "1111光棍脫單狂歡節-第一重",
+      start: "2026-11-07 00:00",
+      end: "2026-11-15 23:59:59",
+      date: "11/07 即刻起～11/15 23:59",
+      tagline: "每天登入現領 $11 光棍脫單金・彩金 5 倍流水",
+      chip: "每日登入 · 每日限領一次",
       input: "none",
       tiers: [
-        { min:0, bonus:111, label:"儲值不限金額送 111" },
+        { bonus:11, label:"每日登入送 11" },
       ],
       turnover: "彩金",
-      multiplier: 1,
-      tierNote: "活動期間儲值不限金額即可申請 · 彩金 1 倍流水",
-      footnote: "出款需達彩金 1 倍流水 · 可與第二彈疊加 · 活動至 11/5 23:59",
+      multiplier: 5,
+      tierHint: "免審核 · 不需輸入金額",
+      tierNote: "當日有登入即可領取 · 彩金 5 倍流水",
+      footnote: "每日限領一次 · 出款需達彩金 5 倍流水 · 活動至 11/15 23:59",
       terms: [
-        "活動期間儲值不限金額，即贈彩金 111，無門檻。僅限申請一次。",
-        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
-        "全部彩金僅需 1 倍流水（碼量＝彩金 × 1）。",
-        "活動時間：11/1 起～11/5 23:59；儲值後未下注前聯繫客服申請。"
+        "活動期間每日登入黃金豹，即可領取 $11 光棍脫單金。",
+        "每日限申請一次。",
+        "彩金需達 5 倍流水（碼量＝彩金 × 5）。",
       ],
       rules: [
-        "活動時間：11/1 起～11/5 23:59。",
-        "活動期間儲值不限金額，即贈彩金 111，無門檻。僅限申請一次。",
-        "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
-        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
-        "儲值後未下注前聯繫客服申請。",
+        "活動時間：11/07 即刻起～11/15 23:59 止。",
+        "活動期間每日登入黃金豹，即可領取彩金 $11。",
+        "每日限申請一次。",
+        "彩金碼量為彩金 * 5 倍流水後方可申請出款。",
         "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
-        "黃金豹保有最終審核權，有權拒絕發放彩金。",
-        "黃金豹保留本活動之最終解釋權。"
-      ],
-    },
-    {
-      id: "boost",
-      title: "第二彈｜滿額加碼",
-      tab: "第二彈｜滿額加碼",
-      short: "高於門檻送 511～5811",
-      name: "11月歡樂慶典-第二彈",
-      start: "2026-11-01 00:00",
-      end: "2026-11-05 23:59:59",
-      date: "11/1 起～11/5 23:59",
-      tagline: "滿額加碼三檔・彩金 1 倍流水・可與第一彈疊加",
-      chip: "滿額加碼 · 三檔門檻",
-      tiers: [
-        { min:10000, bonus:511, label:"儲值高於 10,000 送 511" },
-        { min:60000, bonus:3511, label:"儲值高於 60,000 送 3511" },
-        { min:100000, bonus:5811, label:"儲值高於 100,000 送 5811" },
-      ],
-      turnover: "彩金",
-      multiplier: 1,
-      tierNote: "三檔門檻（文案「高於」；系統判定 ≥ 門檻）· 彩金 1 倍流水",
-      footnote: "出款需達彩金 1 倍流水 · 可與第一彈疊加 · 活動至 11/5 23:59",
-      terms: [
-        "儲值高於 10,000 贈 511；高於 60,000 贈 3,511；高於 100,000 贈 5,811。",
-        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
-        "全部彩金僅需 1 倍流水（碼量＝彩金 × 1）。",
-        "完成該優惠碼量後才可申請下一筆優惠。",
-        "活動時間：11/1 起～11/5 23:59；儲值後未下注前聯繫客服申請。"
-      ],
-      rules: [
-        "活動時間：11/1 起～11/5 23:59。",
-        "儲值高於 10,000 贈 511；高於 60,000 贈 3,511；高於 100,000 贈 5,811。",
-        "第一彈：僅限申請一次。",
-        "第二彈：完成該優惠碼量後才可申請下一筆優惠。",
-        "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
-        "1+1 雙重疊加：第一彈與第二彈可同時領取。",
-        "儲值後未下注前聯繫客服申請。",
-        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
-        "黃金豹保有最終審核權，有權拒絕發放彩金。",
-        "黃金豹保留本活動之最終解釋權。"
-      ],
-    },
-    {
-      id: "turnover",
-      title: "限時突發空投",
-      tab: "限時突發空投",
-      short: "第二重 流水加碼",
-      name: "限時突發空投｜第二重",
-      start: "2026-10-27 00:00",
-      end: "2026-11-01 23:59:59",
-      date: "即日起～11/01（日）23:59",
-      tagline: "當日有效投注達標・最高再送 $20,000",
-      chip: "每日限領一次 · 天天達標天天領",
-      input: { label:"當日有效投注", hint:"請輸入會員當日有效投注", placeholder:"例如 1,000,000", unit:"", gate:"投注" },
-      tiers: [
-        { min:1000000, bonus:1000, label:"當日有效投注滿 1,000,000 送 1,000" },
-        { min:5000000, bonus:5000, label:"當日有效投注滿 5,000,000 送 5,000" },
-        { min:10000000, bonus:20000, label:"當日有效投注滿 10,000,000 送 20,000" },
-      ],
-      turnover: "彩金",
-      multiplier: 1,
-      tierHint: "依當日有效投注自動套用最高一階",
-      tierNote: "三階擇最高一階 · 每日限領一次",
-      footnote: "每日限領一次 · 出款需達彩金 1 倍流水 · 活動至 11/01 23:59",
-      terms: [
-        "當日有效投注達標後聯繫客服申請。",
-        "每日限領一次，依當日有效投注適用最高一階。",
-      ],
-      rules: [
-        "活動時間：即日起～11/01（日）23:59。",
-        "當日有效投注滿 1,000,000 送 $1,000、滿 5,000,000 送 $5,000、滿 10,000,000 送 $20,000，依當日有效投注適用最高一階。",
-        "每日限領一次。",
-        "彩金碼量為彩金 * 1 倍流水後方可申請出款。",
-        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
-        "當日有效投注達標後聯繫客服申請。",
         "黃金豹保有最終審核權，有權拒絕發放彩金。",
         "黃金豹保留本活動之最終解釋權。",
       ],
-    }
+    },
+    {
+      id: "d2",
+      title: "第二重｜每日首儲・加碼秒送",
+      tab: "第二重",
+      short: "當日儲值送 111",
+      name: "1111光棍脫單狂歡節-第二重",
+      start: "2026-11-07 00:00",
+      end: "2026-11-15 23:59:59",
+      date: "11/07 即刻起～11/15 23:59",
+      tagline: "當日儲值不限額度再領 $111 補血彩金・彩金 5 倍流水",
+      chip: "當日儲值不限額度 · 每日限領一次",
+      input: "none",
+      tiers: [
+        { bonus:111, label:"當日儲值不限額度送 111" },
+      ],
+      turnover: "彩金",
+      multiplier: 5,
+      tierHint: "不需輸入金額 · 確認會員當日有儲值",
+      tierNote: "當日有儲值（不限額度）即可申請 · 彩金 5 倍流水",
+      footnote: "每日限領一次 · 出款需達彩金 5 倍流水 · 活動至 11/15 23:59",
+      terms: [
+        "活動期間當日儲值不限額度，即可再領 $111 補血彩金。",
+        "每日限申請一次。",
+        "彩金需達 5 倍流水（碼量＝彩金 × 5）。",
+        "儲值後未下注前聯繫客服申請。",
+      ],
+      rules: [
+        "活動時間：11/07 即刻起～11/15 23:59 止。",
+        "活動期間當日儲值不限額度，即贈彩金 $111。",
+        "每日限申請一次。",
+        "彩金碼量為彩金 * 5 倍流水後方可申請出款。",
+        "儲值後未下注前聯繫客服申請。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。",
+      ],
+    },
+    {
+      id: "d3",
+      title: "第三重｜轉輪狂飆・流水達標送 $1,111",
+      tab: "第三重",
+      short: "儲值＋11 倍流水 送 111～1,111",
+      name: "1111光棍脫單狂歡節-第三重",
+      start: "2026-11-07 00:00",
+      end: "2026-11-15 23:59:59",
+      date: "11/07 即刻起～11/15 23:59",
+      tagline: "儲值達標且流水達 11 倍・最高送 $1,111・彩金 5 倍流水",
+      chip: "須先完成 11 倍流水 · 每日限領一次",
+      tiers: [
+        { min:5000, bonus:111, label:"儲值 5,000～9,999 且流水達 11 倍送 111" },
+        { min:10000, bonus:1111, label:"儲值 10,000 以上且流水達 11 倍送 1111" },
+      ],
+      turnover: "彩金",
+      multiplier: 5,
+      flowGate: { multiplier:11, label:"儲值後有效流水" },
+      tierHint: "依儲值金額自動套用最高一階 · 流水須達儲值 × 11",
+      tierNote: "有效流水須達儲值金額 × 11 倍才可領取 · 彩金 5 倍流水",
+      footnote: "每日限領一次 · 出款需達彩金 5 倍流水 · 活動至 11/15 23:59",
+      terms: [
+        "儲值 5,000～10,000 且流水達 11 倍，贈彩金 111；儲值 10,000 以上且流水達 11 倍，贈彩金 1,111。",
+        "流水達標後聯繫客服申請。",
+        "每日限申請一次。",
+        "彩金需達 5 倍流水（碼量＝彩金 × 5）。",
+      ],
+      rules: [
+        "活動時間：11/07 即刻起～11/15 23:59 止。",
+        "儲值 5,000～10,000 且流水達 11 倍，贈彩金 $111。",
+        "儲值 10,000 以上且流水達 11 倍，贈彩金 $1,111。",
+        "每日限申請一次。",
+        "彩金碼量為彩金 * 5 倍流水後方可申請出款。",
+        "流水達標後聯繫客服申請。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。",
+      ],
+    },
+    {
+      id: "d4",
+      title: "第四重｜巨鯨專屬・高額儲值大回饋",
+      tab: "第四重",
+      short: "儲值滿額送 511～51,111",
+      name: "1111光棍脫單狂歡節-第四重",
+      start: "2026-11-07 00:00",
+      end: "2026-11-15 23:59:59",
+      date: "11/07 即刻起～11/15 23:59",
+      tagline: "儲值滿 1 萬～100 萬・最高 $51,111 終極金・彩金 5 倍流水",
+      chip: "巨鯨專屬 · 四檔門檻 · 每日限領一次",
+      tiers: [
+        { min:10000, bonus:511, label:"儲值滿 10,000 送 511" },
+        { min:50000, bonus:2511, label:"儲值滿 50,000 送 2511" },
+        { min:500000, bonus:25111, label:"儲值滿 500,000 送 25111" },
+        { min:1000000, bonus:51111, label:"儲值滿 1,000,000 送 51111" },
+      ],
+      turnover: "彩金",
+      multiplier: 5,
+      tierNote: "四檔門檻擇最高一檔 · 彩金 5 倍流水",
+      footnote: "每日限領一次 · 出款需達彩金 5 倍流水 · 活動至 11/15 23:59",
+      terms: [
+        "儲值滿 1 萬贈 511；滿 5 萬贈 2,511；滿 50 萬贈 25,111；滿 100 萬贈 51,111。",
+        "每日限申請一次。",
+        "彩金需達 5 倍流水（碼量＝彩金 × 5）。",
+        "儲值後未下注前聯繫客服申請。",
+      ],
+      rules: [
+        "活動時間：11/07 即刻起～11/15 23:59 止。",
+        "儲值滿 $10,000 贈 $511；滿 $50,000 贈 $2,511；滿 $500,000 贈 $25,111；滿 $1,000,000 贈 $51,111。",
+        "每日限申請一次。",
+        "彩金碼量為彩金 * 5 倍流水後方可申請出款。",
+        "儲值後未下注前聯繫客服申請。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。",
+      ],
+    },
+    {
+      id: "d5",
+      title: "第五重｜封神之戰・加贈 11 萬",
+      tab: "第五重",
+      short: "淨盈利 1,111,111 送 110,000",
+      name: "1111光棍脫單狂歡節-第五重",
+      start: "2026-11-07 00:00",
+      end: "2026-11-15 23:59:59",
+      date: "11/07 即刻起～11/15 23:59",
+      tagline: "活動期間淨盈利達 $1,111,111・加贈 $110,000 超級彩金",
+      chip: "每位會員限領一次 · 須具備第一～四重資格",
+      input: { label:"活動期間淨盈利", hint:"請輸入會員活動期間淨盈利", placeholder:"例如 1,111,111", unit:"$", gate:"淨盈利" },
+      tiers: [
+        { min:1111111, bonus:110000, label:"活動期間淨盈利滿 1,111,111 送 110000" },
+      ],
+      turnover: "彩金",
+      multiplier: 5,
+      tierHint: "淨盈利滿 $1,111,111 即可申請",
+      tierNote: "須另行核對：活動期間已完成第一～四重優惠申請資格 · 彩金 5 倍流水",
+      footnote: "活動期間限領一次 · 出款需達彩金 5 倍流水 · 活動至 11/15 23:59",
+      terms: [
+        "活動期間淨盈利達 $1,111,111，加贈 $110,000 超級彩金。",
+        "須於活動期間完成第一重至第四重所有優惠申請資格。",
+        "活動期間每位會員限領一次。",
+        "彩金需達 5 倍流水（碼量＝彩金 × 5）。",
+      ],
+      rules: [
+        "活動時間：11/07 即刻起～11/15 23:59 止。",
+        "活動期間淨盈利達 $1,111,111，加贈彩金 $110,000。",
+        "須於活動期間完成第一重至第四重所有優惠申請資格。",
+        "活動期間每位會員限領一次。",
+        "彩金碼量為彩金 * 5 倍流水後方可申請出款。",
+        "領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。",
+        "黃金豹保有最終審核權，有權拒絕發放彩金。",
+        "黃金豹保留本活動之最終解釋權。",
+      ],
+    },
   ],
 };
 
@@ -843,6 +945,7 @@ function normalizePromo(raw, file){
     terms: list(raw.terms),
     rules,
     order: Number.isFinite(order) ? order : 0,
+    flowGate: raw.flowGate && Number(raw.flowGate.multiplier) > 0 ? { multiplier:Number(raw.flowGate.multiplier), label:str(raw.flowGate.label) || "有效流水" } : null,
   }};
 }
 
@@ -891,10 +994,20 @@ function tierLabel(t){
   return `儲 ${money(t.min)} 送 ${giftText(t)}`;
 }
 const tierFor = (p, deposit) => [...p.tiers].reverse().find(t => deposit >= t.min) || null;
-const turnoverText = t => t.withDeposit ? `（本金＋彩金）× ${t.multiplier} 倍` : `（彩金）× ${t.multiplier} 倍`;
+const turnoverText = t => !t.multiplier ? "（各重碼量合計）" : t.withDeposit ? `（本金＋彩金）× ${t.multiplier} 倍` : `（彩金）× ${t.multiplier} 倍`;
 const shortfall = (p, deposit, min) => { const u = p.input.unit; return `${p.input.label} ${u}${money(deposit)} 未達最低門檻 ${u}${money(min)}，差額 ${u}${money(min - deposit)}。`; };
 
-function calculate(p, depositRaw, pick = -1){
+function calculate(p, depositRaw, pick = -1, flowRaw = ""){
+  const r = calculateBase(p, depositRaw, pick);
+  if(!p.flowGate || !r.ok) return r;
+  const flow = parseAmount(flowRaw), needFlow = r.deposit * p.flowGate.multiplier;
+  const fl = p.flowGate.label;
+  const fail = reason => ({ ...r, ok:false, bonus:0, required:0, flow, needFlow, reason });
+  if(flow <= 0) return fail(`請輸入${fl}（須達 ${money(r.deposit)} × ${p.flowGate.multiplier} = ${money(needFlow)}）。`);
+  if(flow < needFlow) return fail(`${fl} ${money(flow)} 未達 ${money(needFlow)}（儲值 × ${p.flowGate.multiplier} 倍），差額 ${money(needFlow - flow)}。`);
+  return { ...r, flow, needFlow };
+}
+function calculateBase(p, depositRaw, pick = -1){
   if(!p.input){
     const tier = p.tiers[0];
     return { ok:true, promo:p, tier, deposit:0, required:tier.bonus * tier.multiplier, bonus:tier.bonus, capped:false, reason:"" };
@@ -960,12 +1073,46 @@ function calculateStack(depositRaw){
   const tier = { min:0, bonus, multiplier:1, withDeposit:false, label:`第一彈 ${plain(m.bonus)}＋第二彈 ${plain(b.bonus)}` };
   return { ok:true, stacked:true, promo, meet:m, boost:b, tier, deposit:b.deposit, bonus, required:bonus * 1, reason:"", stackHint:"" };
 }
+// ── 多重合併申請 ──
+const isDepositInput = inp => !!inp && inp.label === "本次儲值";
+const fieldOf = p => !p || !p.input ? null : isDepositInput(p.input) ? "amount" : "extra";
+const partShort = p => p.tab || p.name;
+const comboSel = new Set();
+const comboParts = () => liveParts().filter(p => comboSel.has(p.id));
+function calculateCombo(parts, raws){
+  const subs = parts.map(p => ({ p, r: calculate(p, fieldOf(p) ? raws[fieldOf(p)] || "" : "", -1, raws.flow || "") }));
+  const depP = parts.find(p => fieldOf(p) === "amount"), exP = parts.find(p => fieldOf(p) === "extra"), flP = parts.find(p => p.flowGate);
+  const deposit = depP ? parseAmount(raws.amount) : 0;
+  const lines = [];
+  if(depP) lines.push({ label:depP.input.label, value:deposit, unit:depP.input.unit });
+  if(exP) lines.push({ label:exP.input.label, value:parseAmount(raws.extra), unit:exP.input.unit });
+  if(flP) lines.push({ label:flP.flowGate.label, value:parseAmount(raws.flow), unit:"$", need:deposit * flP.flowGate.multiplier });
+  const promo = {
+    name: `${CAMPAIGN.copyName || CAMPAIGN.title}-${parts.map(partShort).join("＋")}`,
+    input: null,
+    terms: mergeUniqueLists(...parts.map(p => p.terms)),
+    rules: mergeUniqueLists(...parts.map(p => p.rules)),
+  };
+  const tiers = subs.map(x => x.r.tier).filter(Boolean);
+  const mults = new Set(tiers.map(t => t.multiplier)), wds = new Set(tiers.map(t => t.withDeposit));
+  const same = mults.size === 1 && wds.size === 1;
+  const tier = { min:0, bonus:0, multiplier: same ? [...mults][0] : 0, withDeposit: same && [...wds][0],
+    label: subs.map(x => `${partShort(x.p)} ${x.r.ok ? plain(x.r.bonus) : INELIGIBLE}`).join("＋") };
+  const out = { promo, tier, lines, subs, deposit, combo:true, capped:false, stackHint:"" };
+  const bad = subs.filter(x => !x.r.ok);
+  if(bad.length) return { ...out, ok:false, bonus:0, required:0, reason: bad.map(x => `【${partShort(x.p)}】${x.r.reason}`).join(" ") };
+  return { ...out, ok:true, bonus: subs.reduce((s, x) => s + x.r.bonus, 0), required: subs.reduce((s, x) => s + x.r.required, 0), reason:"" };
+}
+const lineText = (r, sep, withUnit) => (r.lines || []).map(l => `${l.label}${sep}${l.value > 0 ? (withUnit ? l.unit : "") + money(l.value) : INELIGIBLE}${withUnit && l.need != null ? `（須達 $${money(l.need)}）` : ""}\n`).join("");
+
 function buildConfirm(r){
   const p = r.promo;
   const terms = `【活動條款與注意事項】\n${p.terms.join("\n")}\n\n${LEGAL_TERMS}`;
   const head = `申請 【${p.name}】\n`
     + `適用方案:${r.tier ? tierLabel(r.tier) : INELIGIBLE}\n`
-    + (p.input ? `${p.input.label}:${r.deposit > 0 ? p.input.unit + money(r.deposit) : INELIGIBLE}\n` : "");
+    + (p.input ? `${p.input.label}:${r.deposit > 0 ? p.input.unit + money(r.deposit) : INELIGIBLE}\n` : "")
+    + (p.flowGate && r.flow != null ? `${p.flowGate.label}:${r.flow > 0 ? "$" + money(r.flow) : INELIGIBLE}（須達 $${money(r.needFlow)}）\n` : "")
+    + lineText(r, ":", true);
   if(!r.ok){
     return head
       + `加贈彩金:${INELIGIBLE}\n`
@@ -986,6 +1133,7 @@ function buildFinish(r){
       + `--------------------------------\n`
       + `申請項目：${INELIGIBLE}\n`
       + (p.input ? `${p.input.label}：${r.deposit > 0 ? money(r.deposit) : INELIGIBLE}\n` : "")
+      + lineText(r, "：", false)
       + `獲得彩金：${INELIGIBLE}\n`
       + `--------------------------------\n`
       + `${INELIGIBLE}，${r.reason}`;
@@ -996,6 +1144,8 @@ function buildFinish(r){
     + `申請項目：${p.name}\n`
     + `適用方案：${tierLabel(r.tier)}\n`
     + (p.input ? `${p.input.label}：${money(r.deposit)}\n` : "")
+    + (p.flowGate && r.flow != null ? `${p.flowGate.label}：${money(r.flow)}\n` : "")
+    + lineText(r, "：", false)
     + `獲得彩金：${plain(r.bonus)}\n`
     + `須達碼量：${plain(r.required)}\n`
     + `--------------------------------\n`
@@ -1108,6 +1258,7 @@ function paintPromo(){
     $("window-text").textContent = broken ? "請檢查活動設定" : PARTS.map(x => x.date).slice(-1)[0];
     $("time-left").hidden = true;
     const sw = $("stack-wrap"); if(sw) sw.hidden = true;
+    $("combo").hidden = true;
     $("empty-title").textContent = title;
     $("empty-text").textContent = text;
     $("entry-date").textContent = "";
@@ -1118,19 +1269,10 @@ function paintPromo(){
   paintTimeLeft();
   $("promo-chip").textContent = p.chip;
   $("promo-chip").hidden = !p.chip;
-  const stackable = canStack(p);
   const wrap = $("stack-wrap");
-  if(wrap) wrap.hidden = !stackable;
-  const wantStack = stackable && stackWanted();
-  const amountSrc = p.input || (wantStack ? (partById("boost") && partById("boost").input) : null);
-  $("amount-field").hidden = !amountSrc;
-  if(amountSrc){
-    $("amount-label").textContent = amountSrc.field;
-    $("amount-hint").textContent = amountSrc.hint;
-    $("amount").placeholder = amountSrc.placeholder;
-    $("amount-sign").hidden = !amountSrc.unit;
-    $("amount").classList.toggle("no-sign", !amountSrc.unit);
-  }
+  if(wrap) wrap.hidden = !canStack(p);
+  paintCombo();
+  paintFields();
   $("tier-hint").textContent = p.tierHint;
   $("turnover-na").textContent = p.tierNote;
   $("turnover-na").hidden = !p.tierNote;
@@ -1157,8 +1299,60 @@ function paintPromo(){
   if(p.choose) tiers.querySelectorAll(".tier").forEach(el => el.addEventListener("click", () => choosePlan(Number(el.dataset.i))));
 }
 
+function activeParts(){ const c = comboParts(); return c.length >= 2 ? c : (ACTIVE ? [ACTIVE] : []); }
+function paintFields(){
+  const p = ACTIVE;
+  if(!p) return;
+  const parts = activeParts();
+  const wantStack = canStack(p) && stackWanted();
+  const depP = parts.find(x => fieldOf(x) === "amount");
+  const amountSrc = depP ? depP.input : (wantStack ? (partById("boost") && partById("boost").input) : null);
+  $("amount-field").hidden = !amountSrc;
+  if(amountSrc){
+    $("amount-label").textContent = amountSrc.field;
+    $("amount-hint").textContent = amountSrc.hint;
+    $("amount").placeholder = amountSrc.placeholder;
+    $("amount-sign").hidden = !amountSrc.unit;
+    $("amount").classList.toggle("no-sign", !amountSrc.unit);
+  }
+  const exP = parts.find(x => fieldOf(x) === "extra");
+  $("extra-field").hidden = !exP;
+  if(exP){
+    const s = exP.input;
+    $("extra-label").textContent = s.field;
+    $("extra-hint").textContent = s.hint;
+    $("extra").placeholder = s.placeholder;
+    $("extra-sign").hidden = !s.unit;
+    $("extra").classList.toggle("no-sign", !s.unit);
+  }
+  const flP = parts.find(x => x.flowGate);
+  $("flow-field").hidden = !flP;
+  if(flP){
+    $("flow-label").textContent = flP.flowGate.label;
+    $("flow-hint").textContent = `須達儲值金額 × ${flP.flowGate.multiplier} 倍`;
+  }
+}
+function paintCombo(){
+  const box = $("combo"), list = $("combo-list"), live = liveParts();
+  for(const id of [...comboSel]) if(!live.some(p => p.id === id)) comboSel.delete(id);
+  box.hidden = !ACTIVE || live.length < 2;
+  list.textContent = "";
+  live.forEach(p => {
+    const lb = document.createElement("label");
+    lb.className = "combo-item" + (comboSel.has(p.id) ? " on" : "");
+    lb.title = p.short;
+    const cb = document.createElement("input");
+    cb.type = "checkbox";
+    cb.checked = comboSel.has(p.id);
+    cb.addEventListener("change", () => { if(cb.checked) comboSel.add(p.id); else comboSel.delete(p.id); onComboChange(); });
+    lb.append(cb, document.createTextNode(partShort(p)));
+    list.appendChild(lb);
+  });
+}
+function onComboChange(){ paintCombo(); paintFields(); render(); zoomApply(); }
+
 const picks = {};
-const pickOf = p => p && p.choose && picks[p.id] != null ? picks[p.id] : -1;
+const pickOf =p => p && p.choose && picks[p.id] != null ? picks[p.id] : -1;
 function choosePlan(i){
   if(!ACTIVE || !ACTIVE.choose || !ACTIVE.tiers[i]) return;
   picks[ACTIVE.id] = i;
@@ -1176,7 +1370,7 @@ function selectPart(id){
   wantPart = id;
   store.set(PART_KEY, id);
   syncClock(true);
-  if(ACTIVE && (ACTIVE.input || (canStack(ACTIVE) && stackWanted()))) $("amount").focus({ preventScroll:true });
+  if(ACTIVE && comboParts().length < 2 && (ACTIVE.input || (canStack(ACTIVE) && stackWanted()))) $(fieldOf(ACTIVE) || "amount").focus({ preventScroll:true });
 }
 function syncClock(force){
   const was = ACTIVE, t = clockNow(), live = liveParts(t);
@@ -1211,6 +1405,9 @@ function bindAmountField(id){
   });
 }
 bindAmountField("amount");
+bindAmountField("flow");
+bindAmountField("extra");
+$("combo-clear").addEventListener("click", () => { comboSel.clear(); onComboChange(); });
 (function bindStack(){
   const el = $("stack-11");
   if(!el) return;
@@ -1226,21 +1423,29 @@ bindAmountField("amount");
 
 function render(){
   if(!ACTIVE){ current = null; return; }
-  const depositRaw = $("amount").value;
-  const usingStack = canStack(ACTIVE) && stackWanted();
-  current = usingStack ? calculateStack(depositRaw) : calculate(ACTIVE, depositRaw, pickOf(ACTIVE));
+  const raws = { amount:$("amount").value, extra:$("extra").value, flow:$("flow").value };
+  const depositRaw = raws.amount;
+  const parts = activeParts(), combo = parts.length >= 2;
+  const usingStack = !combo && canStack(ACTIVE) && stackWanted();
+  current = combo ? calculateCombo(parts, raws)
+    : usingStack ? calculateStack(depositRaw)
+    : calculate(ACTIVE, fieldOf(ACTIVE) ? raws[fieldOf(ACTIVE)] : "", pickOf(ACTIVE), raws.flow);
+  [["amount","parsed"],["extra","extra-parsed"],["flow","flow-parsed"]].forEach(([id, out]) => {
+    const raw = raws[id], n = parseAmount(raw), el = $(out);
+    const show = n > 0 && raw.trim() !== money(n);
+    el.textContent = show ? `= ${money(n)}` : "";
+    el.classList.toggle("show", show);
+  });
 
-  const deposit = current.deposit;
-  const p1 = $("parsed");
-  const showParsed1 = deposit > 0 && depositRaw.trim() !== money(deposit);
-  p1.textContent = showParsed1 ? `= ${money(deposit)}` : "";
-  p1.classList.toggle("show", showParsed1);
-
-  const idx = (!usingStack && current.tier) ? ACTIVE.tiers.indexOf(current.tier) : (usingStack && current.boost && current.boost.tier && ACTIVE.id === "boost" ? ACTIVE.tiers.indexOf(current.boost.tier) : -1);
+  const deposit = parseAmount(depositRaw);
+  const sub = combo && current.subs ? current.subs.find(x => x.p === ACTIVE) : null;
+  const idx = combo ? (sub && sub.r.tier ? ACTIVE.tiers.indexOf(sub.r.tier) : -1)
+    : (!usingStack && current.tier) ? ACTIVE.tiers.indexOf(current.tier) : (usingStack && current.boost && current.boost.tier && ACTIVE.id === "boost" ? ACTIVE.tiers.indexOf(current.boost.tier) : -1);
+  const idxOk = combo ? !!(sub && sub.r.ok) : current.ok;
   document.querySelectorAll(".tier").forEach(el => {
     const i = Number(el.dataset.i), applies = i === idx;
     el.classList.toggle("reached", applies);
-    el.classList.toggle("on", applies && current.ok);
+    el.classList.toggle("on", applies && idxOk);
     if(!ACTIVE.choose) return;
     el.setAttribute("aria-pressed", applies ? "true" : "false");
     const t = ACTIVE.tiers[i], r = calculate(ACTIVE, depositRaw, i);
@@ -1264,9 +1469,9 @@ function render(){
   $("note").classList.toggle("show", !current.ok || !!current.stackHint);
 
   const st = $("status");
-  const needAmt = !!(ACTIVE.input) || usingStack;
-  if(!needAmt){ st.textContent = "可領取"; st.className = "status hit"; }
-  else if(!depositRaw.trim()){ st.textContent = "待輸入"; st.className = "status"; }
+  const need = [...new Set(parts.flatMap(x => [fieldOf(x), x.flowGate ? "flow" : null]).filter(Boolean).concat(usingStack ? ["amount"] : []))];
+  if(!need.length){ st.textContent = current.ok ? "可領取" : "未符合資格"; st.className = current.ok ? "status hit" : "status miss"; }
+  else if(need.every(k => !raws[k].trim())){ st.textContent = "待輸入"; st.className = "status"; }
   else if(!usingStack && ACTIVE.choose && idx < 0){ st.textContent = "待選方案"; st.className = "status"; }
   else if(current.ok){ st.textContent = "符合資格"; st.className = "status hit"; }
   else { st.textContent = "未符合資格"; st.className = "status miss"; }
@@ -1305,7 +1510,7 @@ document.querySelectorAll("[data-copy-value]").forEach(btn => {
   btn.addEventListener("click", () => {
     if(!current) return;
     const map = {
-      promo: current.promo.name,
+      promo: CAMPAIGN.copyName || current.promo.name,
       bonus: current.ok ? plain(current.bonus) : INELIGIBLE,
       turnover: current.ok ? plain(current.required) : INELIGIBLE,
       remark: buildRemark(current),
@@ -1620,54 +1825,46 @@ window.__selfTest = function(){
   eq(liveParts(Date.parse("2026-11-01T23:59:58+08:00"), [D, T2]).map(x => x.id), ["turnover"], "11/01 23:59 第二重還在");
   eq(liveParts(Date.parse("2026-11-02T00:00:00+08:00"), [D, T2]).map(x => x.id), [], "11/02 全部結束");
   bad({ ...base, input:"none", tiers:[{ pct:5 }] }, "固定彩金", "免輸入只能固定彩金");
-  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["meet","boost","turnover"]], "11月歡樂慶典 meet+boost＋空投設定正確");
-  const MEET = PARTS[0], BOOST = PARTS[1];
-  eq([MEET.input, MEET.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], [null, [[0,111,1,false]]], "第一彈免輸入固定 111");
-  const m1 = calculate(MEET, "");
-  eq([m1.ok, m1.bonus, m1.required], [true, 111, 111], "第一彈試算 111");
-  const mc = buildConfirm(m1), mf = buildFinish(m1);
-  if(/本次儲值/.test(mc + mf)) fails.push("第一彈不應出現本次儲值");
-  ["申請 【11月歡樂慶典-第一彈】","適用方案:儲值不限金額送 111","加贈彩金:111\n","須達碼量:111（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!mc.includes(x)) fails.push(`第一彈確認文案缺: ${x}`); });
-  ["申請項目：11月歡樂慶典-第一彈","獲得彩金：111\n","須達碼量：111\n","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!mf.includes(x)) fails.push(`第一彈結束文案缺: ${x}`); });
-  if(/5922|5,922|最高可拿/.test(mc + mf + MEET.rules.join("") + BOOST.rules.join(""))) fails.push("禁止 5922／最高可拿加總句");
-  if(/依最高級距發放一次|最高一檔發放一次/.test(MEET.rules.join("") + BOOST.rules.join("") + MEET.terms.join("") + BOOST.terms.join(""))) fails.push("禁止最高級距／最高一檔發放一次句");
-  eq([BOOST.input && BOOST.input.label, BOOST.tiers.map(t => [t.min, t.bonus, t.multiplier, t.withDeposit])], ["本次儲值", [[10000,511,1,false],[60000,3511,1,false],[100000,5811,1,false]]], "第二彈門檻與固定彩金");
-  eq(BOOST.terms.some(t => t.includes("完成該優惠碼量後才可申請下一筆優惠")), true, "第二彈 terms 含新口徑下一筆");
-  eq(BOOST.rules.includes("第一彈：僅限申請一次。"), true, "第二彈 rules 分條第一彈僅一次");
-  eq(BOOST.rules.includes("第二彈：完成該優惠碼量後才可申請下一筆優惠。"), true, "第二彈 rules 分條下一筆第二彈");
-  eq(BOOST.rules.some(r => r.includes("彩金碼量為彩金 * 1 倍流水後方可申請出款")), true, "保留流水後出款句");
-  eq(BOOST_E2_INTERNAL, "第二彈尚未完成該優惠碼量，暫不核發下一筆第二彈。", "E2 對內口徑");
-  eq(calculate(BOOST, "100000").ok, true, "E2 口徑≠本頁自動擋（仍可算第二彈）");
-  if(/申請狀態機|applyCount|applicationState/.test(String(calculate) + String(calculateStack))) fails.push("未引入申請狀態機／次數");
-
-  [["9999",false],["10000",511],["59999",511],["60000",3511],["99999",3511],["100000",5811],["200000",5811]].forEach(([d,b]) => {
-    const r = calculate(BOOST, d);
-    if(b === false) eq(r.ok, false, `第二彈未達門檻 calculate(${d})`);
-    else eq([r.ok, r.bonus, r.required], [true, b, b], `第二彈 calculate(${d}) ≥門檻`);
+  eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["d1","d2","d3","d4","d5"]], "1111 光棍節五重設定正確");
+  const [G1, G2, G3, G4, G5] = PARTS;
+  const g1 = calculate(G1, ""), g2 = calculate(G2, "");
+  eq([g1.ok, g1.bonus, g1.required, g2.ok, g2.bonus, g2.required], [true, 11, 55, true, 111, 555], "第一重 11／第二重 111、彩金 5 倍流水");
+  [["4999",false],["5000",111],["9999",111],["10000",1111],["50000",1111]].forEach(([d,b]) => {
+    const r = calculate(G3, d, -1, String(parseAmount(d) * 11));
+    if(b === false) eq(r.ok, false, `第三重未達門檻 calculate(${d})`);
+    else eq([r.ok, r.bonus, r.required], [true, b, b * 5], `第三重 calculate(${d})`);
   });
-  const bc = buildConfirm(calculate(BOOST, "100000")), bf = buildFinish(calculate(BOOST, "100000"));
-  ["申請 【11月歡樂慶典-第二彈】","適用方案:儲值高於 100,000 送 5811","本次儲值:$100,000","加贈彩金:5811\n","須達碼量:5811（彩金）× 1 倍","1+1 雙重疊加"].forEach(x => { if(!bc.includes(x)) fails.push(`第二彈確認文案缺: ${x}`); });
-  ["申請項目：11月歡樂慶典-第二彈","獲得彩金：5811\n","須達碼量：5811\n","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!bf.includes(x)) fails.push(`第二彈結束文案缺: ${x}`); });
-  [mc, mf, bc, bf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
-  eq(buildRemark(m1).endsWith(" 11月歡樂慶典-第一彈-111"), true, "第一彈備註");
-  eq(buildRemark(calculate(BOOST, "100000")).endsWith(" 11月歡樂慶典-第二彈-5811"), true, "第二彈備註");
-  const stackSum = calculateStack("100000");
-  eq([stackSum.ok, stackSum.bonus, stackSum.required, stackSum.meet.bonus, stackSum.boost.bonus], [true, 111 + 5811, 111 + 5811, 111, 5811], "1+1 勾選合計（100000→111+5811）");
-  const sc = buildConfirm(stackSum), sf = buildFinish(stackSum);
-  ["申請 【11月歡樂慶典-第一彈＋11月歡樂慶典-第二彈】","適用方案:第一彈 111＋第二彈 5811","本次儲值:$100,000","加贈彩金:" + plain(111 + 5811) + "\n","須達碼量:" + plain(111 + 5811) + "（彩金）× 1 倍","1+1 雙重疊加","即贈彩金 111","儲值高於 10,000 贈 511","高於 60,000 贈 3,511","高於 100,000 贈 5,811"].forEach(x => { if(!sc.includes(x)) fails.push(`1+1確認文案缺: ${x}`); });
-  ["申請項目：11月歡樂慶典-第一彈＋11月歡樂慶典-第二彈","獲得彩金：" + plain(111 + 5811) + "\n","須達碼量：" + plain(111 + 5811) + "\n","即贈彩金 111","高於 10,000 贈 511","領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。","黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!sf.includes(x)) fails.push(`1+1結束文案缺: ${x}`); });
-    if(!sc.includes("僅限申請一次") || !sf.includes("僅限申請一次")) fails.push("1+1 合併須含第一彈「僅限申請一次」");
-  if(!buildConfirm(m1).includes("僅限申請一次") || !buildFinish(m1).includes("僅限申請一次")) fails.push("第一彈確認／結束須含「僅限申請一次」");
-  eq([stackSum.promo.terms.join("|").includes("即贈彩金 111"), stackSum.promo.terms.join("|").includes("儲值高於 10,000 贈 511")], [true, true], "1+1 terms 合併 meet+boost");
-  eq([stackSum.promo.rules.join("|").includes("即贈彩金 111"), stackSum.promo.rules.join("|").includes("儲值高於 10,000 贈 511")], [true, true], "1+1 rules 合併兩彈");
-  const soft = calculateStack("9999");
-  eq([soft.ok, soft.bonus, !!soft.stackHint, soft.stackDegraded], [true, 111, true, true], "1+1 未達第二彈門檻降級第一彈（不擋）");
-  eq(calculate(MEET, "").bonus, 111, "未勾選路徑：單檔 meet 仍 111");
-  eq(calculate(BOOST, "100000").bonus, 5811, "未勾選路徑：單檔 boost 仍 5811");
-  eq(PARTS[2].id, "turnover", "turnover 分頁存在且計算不受 stack 函式影響");
-  // liveParts 只過濾 endMs（開始前也會出現在列表）；以活動結束前後為準
-  eq([liveParts(Date.parse("2026-11-05T23:59:58+08:00")).map(x => x.id), liveParts(Date.parse("2026-11-06T00:00:00+08:00")).map(x => x.id)],
-     [["meet","boost"], []], "11/5 23:59 兩彈仍在、11/6 00:00 結束");
+  eq([calculate(G3, "10000").ok, calculate(G3, "10000", -1, "109999").ok, calculate(G3, "10000", -1, "11萬").ok], [false, false, true], "第三重流水須達儲值 × 11");
+  eq(calculate(G3, "10000", -1, "100000").reason, "儲值後有效流水 100,000 未達 110,000（儲值 × 11 倍），差額 10,000。", "第三重流水差額");
+  const g3c = buildConfirm(calculate(G3, "10000", -1, "120000"));
+  if(!g3c.includes("儲值後有效流水:$120,000（須達 $110,000）")) fails.push("第三重確認文案缺流水行");
+  if(!buildFinish(calculate(G3, "10000", -1, "120000")).includes("儲值後有效流水：120,000")) fails.push("第三重結束文案缺流水行");
+  [["9999",false],["10000",511],["49999",511],["50000",2511],["499999",2511],["50萬",25111],["999999",25111],["100萬",51111],["3百萬",51111]].forEach(([d,b]) => {
+    const r = calculate(G4, d);
+    if(b === false) eq(r.ok, false, `第四重未達門檻 calculate(${d})`);
+    else eq([r.ok, r.bonus, r.required], [true, b, b * 5], `第四重 calculate(${d})`);
+  });
+  eq([calculate(G5, "1111110").ok, calculate(G5, "1111111").bonus, calculate(G5, "1111111").required], [false, 110000, 550000], "第五重淨盈利門檻");
+  const g4c = buildConfirm(calculate(G4, "1000000")), g4f = buildFinish(calculate(G4, "1000000"));
+  ["申請 【1111光棍脫單狂歡節-第四重】","加贈彩金:51111\n","須達碼量:255555（彩金）× 5 倍","每日限申請一次"].forEach(x => { if(!g4c.includes(x)) fails.push(`第四重確認文案缺: ${x}`); });
+  ["獲得彩金：51111\n","須達碼量：255555\n","4.彩金碼量為彩金 * 5 倍流水後方可申請出款。"].forEach(x => { if(!g4f.includes(x)) fails.push(`第四重結束文案缺: ${x}`); });
+  if(PARTS.some(p => p.rules.concat(p.terms).join("").includes("第一重至第五重"))) fails.push("第五重資格不應自我引用（第一重至第五重）");
+  eq(PARTS.some(canStack), false, "光棍節不顯示 1+1 疊加勾選");
+  const k12 = calculateCombo([G1, G2], {});
+  eq([k12.ok, k12.bonus, k12.required], [true, 122, 610], "合併：第一＋第二重");
+  const k13 = calculateCombo([G1, G3], { amount:"10000", flow:"110000" });
+  eq([k13.ok, k13.bonus, k13.required], [true, 1122, 5610], "合併：第一＋第三重");
+  const k13c = buildConfirm(k13), k13f = buildFinish(k13);
+  ["申請 【1111光棍脫單狂歡節-第一重＋第三重】","適用方案:第一重 11＋第三重 1111","本次儲值:$10,000","儲值後有效流水:$110,000（須達 $110,000）","加贈彩金:1122\n","須達碼量:5610（彩金）× 5 倍"].forEach(x => { if(!k13c.includes(x)) fails.push(`合併確認文案缺: ${x}`); });
+  ["申請項目：1111光棍脫單狂歡節-第一重＋第三重","本次儲值：10,000\n","儲值後有效流水：110,000\n","獲得彩金：1122\n","須達碼量：5610\n"].forEach(x => { if(!k13f.includes(x)) fails.push(`合併結束文案缺: ${x}`); });
+  const k34 = calculateCombo([G3, G4], { amount:"10000", flow:"" });
+  eq([k34.ok, k34.reason.startsWith("【第三重】請輸入儲值後有效流水")], [false, true], "合併：任一重不符就擋並標示哪一重");
+  const k45 = calculateCombo([G4, G5], { amount:"1000000", extra:"1111111" });
+  eq([k45.ok, k45.bonus, k45.required], [true, 161111, 805555], "合併：第四＋第五重（儲值與淨盈利分開填）");
+  if(!buildConfirm(k45).includes("活動期間淨盈利:$1,111,111")) fails.push("合併確認文案缺淨盈利");
+  eq(buildRemark(k13).endsWith(" 1111光棍脫單狂歡節-第一重＋第三重-1122"), true, "合併備註");
+  eq([fieldOf(G3), fieldOf(G4), fieldOf(G5), fieldOf(G1)], ["amount", "amount", "extra", null], "欄位分配");
+  eq([liveParts(Date.parse("2026-11-15T23:59:58+08:00")).length, liveParts(Date.parse("2026-11-16T00:00:00+08:00")).length], [5, 0], "11/15 23:59 五重仍在、11/16 00:00 結束");
   bad({ ...base, input:"none", tiers:[{ bonus:1 }, { bonus:2 }] }, "固定彩金", "免輸入只能一個方案");
   eq(startLabel(R), "10/20 19:00 開始", "開始時間顯示（台灣時間）");
   eq(timeLeft(90 * 60000), "剩 1 小時 30 分", "剩餘時間");

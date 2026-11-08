@@ -559,11 +559,11 @@ header::after{
       <div class="panel-head"><span class="mark">✦</span><h2>三年後的大雪</h2><span class="rule"></span></div>
 
       <div class="part-tabs" id="part-tabs" role="group" aria-label="活動切換" hidden></div>
+      <span class="vip-chip" id="promo-chip"></span>
       <div class="combo" id="combo" hidden>
         <div class="combo-head"><span>合併申請 <small>勾 2 項以上即合計</small></span><button type="button" id="combo-clear">清除勾選</button></div>
         <div class="combo-list" id="combo-list"></div>
       </div>
-      <span class="vip-chip" id="promo-chip"></span>
 
       <div id="amount-field">
       <div class="field-label"><span id="amount-label">本次儲值金額</span><span class="hint" id="amount-hint">請輸入實際單筆儲值金額</span></div>
@@ -599,7 +599,7 @@ header::after{
 
       <div class="readout">
         <div class="row lead"><span class="k">加贈彩金</span><span class="v" id="out-bonus">—</span></div>
-        <div class="row"><span class="k">須達碼量</span><span class="v" id="out-turnover">—</span></div>
+        <div class="row"><span class="k">彩金碼量</span><span class="v" id="out-turnover">—</span></div>
         <div class="row"><span class="k">適用方案</span><span class="v dim" id="out-gate">—</span></div>
         <div class="row"><span class="k">備註</span><span class="v dim" id="out-remark">—</span></div>
       </div>
@@ -610,7 +610,7 @@ header::after{
       <div class="chips">
         <button class="btn" data-copy-value="promo" data-name="優惠名稱">優惠名稱</button>
         <button class="btn" data-copy-value="bonus" data-name="彩金">彩金</button>
-        <button class="btn" data-copy-value="turnover" data-name="須達碼量">須達碼量</button>
+        <button class="btn" data-copy-value="turnover" data-name="彩金碼量">彩金碼量</button>
         <button class="btn" data-copy-value="remark" data-name="備註">備註</button>
       </div>
     </section>
@@ -685,13 +685,12 @@ const CAMPAIGN = {
       date: "11/07 即刻起～11/15 23:59",
       tagline: "當日儲值不限額度再領 $111 補血彩金・彩金 5 倍流水",
       chip: "當日儲值不限額度 · 每日限領一次",
-      input: "none",
       tiers: [
-        { bonus:111, label:"當日儲值不限額度送 111" },
+        { min:1, bonus:111, label:"當日儲值不限額度送 111" },
       ],
       turnover: "彩金",
       multiplier: 5,
-      tierHint: "不需輸入金額 · 確認會員當日有儲值",
+      tierHint: "儲值不限額度 · 金額用於計算儲值碼量",
       tierNote: "當日有儲值（不限額度）即可申請 · 彩金 5 倍流水",
       footnote: "每日限領一次 · 出款需達彩金 5 倍流水 · 活動至 11/15 23:59",
       terms: [
@@ -1082,9 +1081,10 @@ const comboParts = () => liveParts().filter(p => comboSel.has(p.id));
 function calculateCombo(parts, raws){
   const subs = parts.map(p => ({ p, r: calculate(p, fieldOf(p) ? raws[fieldOf(p)] || "" : "", -1, raws.flow || "") }));
   const depP = parts.find(p => fieldOf(p) === "amount"), exP = parts.find(p => fieldOf(p) === "extra"), flP = parts.find(p => p.flowGate);
-  const deposit = depP ? parseAmount(raws.amount) : 0;
+  const deposit = parseAmount(raws.amount || "");  // 合併時一律可填儲值，用於儲值碼量
   const lines = [];
   if(depP) lines.push({ label:depP.input.label, value:deposit, unit:depP.input.unit });
+  else if(deposit > 0) lines.push({ label:"本次儲值", value:deposit, unit:"$" });
   if(exP) lines.push({ label:exP.input.label, value:parseAmount(raws.extra), unit:exP.input.unit });
   if(flP) lines.push({ label:flP.flowGate.label, value:parseAmount(raws.flow), unit:"$", need:deposit * flP.flowGate.multiplier });
   const promo = {
@@ -1102,6 +1102,17 @@ function calculateCombo(parts, raws){
   const bad = subs.filter(x => !x.r.ok);
   if(bad.length) return { ...out, ok:false, bonus:0, required:0, reason: bad.map(x => `【${partShort(x.p)}】${x.r.reason}`).join(" ") };
   return { ...out, ok:true, bonus: subs.reduce((s, x) => s + x.r.bonus, 0), required: subs.reduce((s, x) => s + x.r.required, 0), reason:"" };
+}
+// 儲值碼量 = 儲值金額 × DEPOSIT_FLOW_MULT（本金流水倍數；要改倍數改這裡）
+const DEPOSIT_FLOW_MULT = 1;
+function depositOf(r){
+  if(!r || !r.promo) return 0;
+  if(r.combo || r.stacked) return r.deposit || 0;
+  return isDepositInput(r.promo.input) ? r.deposit || 0 : 0;
+}
+function flowSumText(r){
+  const dep = r.tier && r.tier.withDeposit ? 0 : Math.floor(depositOf(r) * DEPOSIT_FLOW_MULT);
+  return `所需計算方式:(${plain(dep)})+(${plain(r.required)})=(${plain(dep + r.required)}) 這部分為您本次儲值領取優惠後共計須完成碼量\n`;
 }
 const lineText = (r, sep, withUnit) => (r.lines || []).map(l => `${l.label}${sep}${l.value > 0 ? (withUnit ? l.unit : "") + money(l.value) : INELIGIBLE}${withUnit && l.need != null ? `（須達 $${money(l.need)}）` : ""}\n`).join("");
 
@@ -1121,7 +1132,8 @@ function buildConfirm(r){
   }
   return head
     + `加贈彩金:${plain(r.bonus)}\n`
-    + `須達碼量:${plain(r.required)}${turnoverText(r.tier)}\n\n`
+    + `彩金碼量:${plain(r.required)}${turnoverText(r.tier)}\n`
+    + flowSumText(r) + `\n`
     + `${terms}\n\n`
     + `請問您是否確認申請？`;
 }
@@ -1147,7 +1159,8 @@ function buildFinish(r){
     + (p.flowGate && r.flow != null ? `${p.flowGate.label}：${money(r.flow)}\n` : "")
     + lineText(r, "：", false)
     + `獲得彩金：${plain(r.bonus)}\n`
-    + `須達碼量：${plain(r.required)}\n`
+    + `彩金碼量：${plain(r.required)}\n`
+    + flowSumText(r)
     + `--------------------------------\n`
     + `活動規則：\n${rules}\n`
     + `系統已派發完成，請重新整理頁面查收。`;
@@ -1283,7 +1296,7 @@ function paintPromo(){
   tiers.style.setProperty("--cols", Math.min(3, p.tiers.length));
   tiers.classList.toggle("pick", p.choose);
   const payout = t => isPct(t) ? `${t.pct}%<small>回饋</small>` : `${money(t.bonus)}<small>彩金</small>`;
-  const gate = t => p.input ? `${p.input.gate} ${p.input.unit}${money(t.min)}` : "免審核 · 秒速到手";
+  const gate = t => p.input ? (t.min <= 1 ? `${p.input.gate} 不限金額` : `${p.input.gate} ${p.input.unit}${money(t.min)}`) : "免審核 · 秒速到手";
   tiers.innerHTML = p.tiers.map((t, i) => p.choose ? `
   <button type="button" class="tier" data-i="${i}" aria-pressed="false">
     <span class="match">已選</span>
@@ -1306,7 +1319,9 @@ function paintFields(){
   const parts = activeParts();
   const wantStack = canStack(p) && stackWanted();
   const depP = parts.find(x => fieldOf(x) === "amount");
-  const amountSrc = depP ? depP.input : (wantStack ? (partById("boost") && partById("boost").input) : null);
+  const combo = parts.length >= 2;
+  const OPTIONAL_DEP = { field:"本次儲值金額", hint:"選填 · 填了會算進儲值碼量", placeholder:"例如 12,000", unit:"$" };
+  const amountSrc = depP ? depP.input : combo ? OPTIONAL_DEP : (wantStack ? (partById("boost") && partById("boost").input) : null);
   $("amount-field").hidden = !amountSrc;
   if(amountSrc){
     $("amount-label").textContent = amountSrc.field;
@@ -1633,17 +1648,17 @@ window.__selfTest = function(){
   eq(calculate(W, "").reason, "請輸入本次實際儲值金額。", "金額留空");
 
   const wc = buildConfirm(calculate(W,"15000")), wf = buildFinish(calculate(W,"15000"));
-  ["申請 【週一工作日限時優惠】","適用方案:儲 12,000 送 5%","加贈彩金:750","須達碼量:47250（本金＋彩金）× 3 倍","當日僅能申請一次。","誠信原則","公平審核","請問您是否確認申請？"].forEach(s => {
+  ["申請 【週一工作日限時優惠】","適用方案:儲 12,000 送 5%","加贈彩金:750","彩金碼量:47250（本金＋彩金）× 3 倍","當日僅能申請一次。","誠信原則","公平審核","請問您是否確認申請？"].forEach(s => {
     if(!wc.includes(s)) fails.push(`確認文案缺: ${s}`);
   });
-  ["申請成功   【週一工作日限時優惠】","獲得彩金：750","須達碼量：47250",GAME,"4.黃金豹保留本活動之最終解釋權。","系統已派發完成"].forEach(s => {
+  ["申請成功   【週一工作日限時優惠】","獲得彩金：750","彩金碼量：47250",GAME,"4.黃金豹保留本活動之最終解釋權。","系統已派發完成"].forEach(s => {
     if(!wf.includes(s)) fails.push(`結束文案缺: ${s}`);
   });
   const rc = buildConfirm(calculate(R,"3000")), rf = buildFinish(calculate(R,"3000"));
-  ["適用方案:儲 2,000 送 $88","加贈彩金:88","須達碼量:88（彩金）× 1 倍",STACK].forEach(s => { if(!rc.includes(s)) fails.push(`固定彩金確認文案缺: ${s}`); });
-  ["適用方案：儲 2,000 送 $88","獲得彩金：88","須達碼量：88"].forEach(s => { if(!rf.includes(s)) fails.push(`固定彩金結束文案缺: ${s}`); });
+  ["適用方案:儲 2,000 送 $88","加贈彩金:88","彩金碼量:88（彩金）× 1 倍",STACK].forEach(s => { if(!rc.includes(s)) fails.push(`固定彩金確認文案缺: ${s}`); });
+  ["適用方案：儲 2,000 送 $88","獲得彩金：88","彩金碼量：88"].forEach(s => { if(!rf.includes(s)) fails.push(`固定彩金結束文案缺: ${s}`); });
   if((wc + wf + rc + rf).includes("已達上限")) fails.push("不應顯示已達上限");
-  [wc, wf, rc, rf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
+  [wc, wf, rc, rf].forEach(x => { if(/(加贈彩金|獲得彩金|彩金碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
   eq(buildRemark(calculate(R,"3000")).endsWith("全體動員 88 彩金-88"), true, "備註格式");
 
   const C = normalizePromo({
@@ -1661,9 +1676,9 @@ window.__selfTest = function(){
   });
   eq(calculate(C, "", 1).reason, "請輸入本次實際儲值金額。", "擇一金額留空");
   const cc = buildConfirm(calculate(C,"10000",1)), cf = buildFinish(calculate(C,"10000",1));
-  ["申請 【限時狂歡】","適用方案:8%回饋（流水 3 倍）","本次儲值:$10,000","加贈彩金:800","須達碼量:32400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
-  ["申請成功   【限時狂歡】","申請項目：限時狂歡\n","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","須達碼量：32400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
-  if(!buildConfirm(calculate(C,"10000",0)).includes("須達碼量:10500（本金＋彩金）× 1 倍")) fails.push("擇一 5% 應為 1 倍流水");
+  ["申請 【限時狂歡】","適用方案:8%回饋（流水 3 倍）","本次儲值:$10,000","加贈彩金:800","彩金碼量:32400（本金＋彩金）× 3 倍"].forEach(x => { if(!cc.includes(x)) fails.push(`擇一確認文案缺: ${x}`); });
+  ["申請成功   【限時狂歡】","申請項目：限時狂歡\n","適用方案：8%回饋（流水 3 倍）","獲得彩金：800","彩金碼量：32400",GAME,FIN].forEach(x => { if(!cf.includes(x)) fails.push(`擇一結束文案缺: ${x}`); });
+  if(!buildConfirm(calculate(C,"10000",0)).includes("彩金碼量:10500（本金＋彩金）× 1 倍")) fails.push("擇一 5% 應為 1 倍流水");
   eq(buildRemark(calculate(C,"10000",1)).endsWith(" 限時狂歡 8%回饋-800"), true, "擇一備註格式");
   eq([promoName(calculate(C,"10000",0)), promoName(calculate(C,"10000",1)), promoName(calculate(C,"10000"))], ["限時狂歡 5%回饋", "限時狂歡 8%回饋", "限時狂歡"], "優惠名稱依方案");
 
@@ -1804,9 +1819,9 @@ window.__selfTest = function(){
   const d1 = calculate(D, "");
   eq([d1.ok, d1.bonus, d1.required], [true, 168, 168], "第一重免費 168、彩金 1 倍流水");
   const dc = buildConfirm(d1), df = buildFinish(d1);
-  if(/本次儲值|當日有效投注/.test(dc + df)) fails.push("第一重不應出現金額欄位");
-  ["申請 【限時突發空投｜第一重】","適用方案:免費空投 168","加贈彩金:168\n","須達碼量:168（彩金）× 1 倍","每位會員限領一次。","曾在黃金豹儲值 1 次以上"].forEach(x => { if(!dc.includes(x)) fails.push(`第一重確認文案缺: ${x}`); });
-  ["申請項目：限時突發空投｜第一重","獲得彩金：168\n","須達碼量：168\n","3.每位會員限領一次。","8.黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!df.includes(x)) fails.push(`第一重結束文案缺: ${x}`); });
+  if(/(本次儲值|當日有效投注)[:：]/.test(dc + df))fails.push("第一重不應出現金額欄位");
+  ["申請 【限時突發空投｜第一重】","適用方案:免費空投 168","加贈彩金:168\n","彩金碼量:168（彩金）× 1 倍","每位會員限領一次。","曾在黃金豹儲值 1 次以上"].forEach(x => { if(!dc.includes(x)) fails.push(`第一重確認文案缺: ${x}`); });
+  ["申請項目：限時突發空投｜第一重","獲得彩金：168\n","彩金碼量：168\n","3.每位會員限領一次。","8.黃金豹保留本活動之最終解釋權。"].forEach(x => { if(!df.includes(x)) fails.push(`第一重結束文案缺: ${x}`); });
   eq(buildRemark(d1).endsWith(" 限時突發空投｜第一重-168"), true, "第一重備註");
   [["1000000",1000],["4999999",1000],["5000000",5000],["9999999",5000],["10000000",20000],["1千萬",20000],["500萬",5000],["3億",20000]].forEach(([d,b]) => {
     const r = calculate(T2, d);
@@ -1815,10 +1830,10 @@ window.__selfTest = function(){
   eq(calculate(T2, "999999").reason, "當日有效投注 999,999 未達最低門檻 1,000,000，差額 1。", "第二重未達門檻");
   eq(calculate(T2, "").reason, "請輸入當日有效投注。", "第二重留空");
   const tc = buildConfirm(calculate(T2,"10000000")), tf = buildFinish(calculate(T2,"10000000"));
-  ["當日有效投注:10,000,000","適用方案:當日有效投注滿 10,000,000 送 20,000","加贈彩金:20000\n","須達碼量:20000（彩金）× 1 倍","每日限領一次"].forEach(x => { if(!tc.includes(x)) fails.push(`第二重確認文案缺: ${x}`); });
-  ["申請項目：限時突發空投｜第二重","當日有效投注：10,000,000","獲得彩金：20000\n","須達碼量：20000\n","3.每日限領一次。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。"].forEach(x => { if(!tf.includes(x)) fails.push(`第二重結束文案缺: ${x}`); });
-  if(/本次儲值/.test(tc + tf)) fails.push("第二重不應出現本次儲值");
-  [dc, df, tc, tf].forEach(x => { if(/(加贈彩金|獲得彩金|須達碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
+  ["當日有效投注:10,000,000","適用方案:當日有效投注滿 10,000,000 送 20,000","加贈彩金:20000\n","彩金碼量:20000（彩金）× 1 倍","每日限領一次"].forEach(x => { if(!tc.includes(x)) fails.push(`第二重確認文案缺: ${x}`); });
+  ["申請項目：限時突發空投｜第二重","當日有效投注：10,000,000","獲得彩金：20000\n","彩金碼量：20000\n","3.每日限領一次。","5.領取此優惠者，禁止遊玩「QT 電子－碰撞類遊戲」。"].forEach(x => { if(!tf.includes(x)) fails.push(`第二重結束文案缺: ${x}`); });
+  if(/本次儲值[:：]/.test(tc + tf))fails.push("第二重不應出現本次儲值");
+  [dc, df, tc, tf].forEach(x => { if(/(加贈彩金|獲得彩金|彩金碼量)[:：][^\n]*[$,]\d/.test(x)) fails.push("彩金與碼量不應有 $ 或逗號"); });
   eq(buildRemark(calculate(T2,"10000000")).endsWith(" 限時突發空投｜第二重-20000"), true, "第二重備註");
   eq(liveParts(Date.parse("2026-10-28T19:59:59+08:00"), [D, T2]).map(x => x.id), ["drop168","turnover"], "10/28 19:59 兩重都在");
   eq(liveParts(Date.parse("2026-10-28T20:00:00+08:00"), [D, T2]).map(x => x.id), ["turnover"], "10/28 20:00 第一重自動移除");
@@ -1827,7 +1842,10 @@ window.__selfTest = function(){
   bad({ ...base, input:"none", tiers:[{ pct:5 }] }, "固定彩金", "免輸入只能固定彩金");
   eq([PART_ERRORS.length, PARTS.map(x => x.id)], [0, ["d1","d2","d3","d4","d5"]], "1111 光棍節五重設定正確");
   const [G1, G2, G3, G4, G5] = PARTS;
-  const g1 = calculate(G1, ""), g2 = calculate(G2, "");
+  const g1 = calculate(G1, ""), g2 = calculate(G2, "3000");
+  eq([calculate(G2, "").ok, fieldOf(G2)], [false, "amount"], "第二重需輸入儲值");
+  if(!buildConfirm(g2).includes("本次儲值:$3,000") || !buildConfirm(g2).includes("所需計算方式:(3000)+(555)=(3555)")) fails.push("第二重儲值碼量");
+  if(!buildFinish(calculate(G2, "1")).includes("所需計算方式:(1)+(555)=(556)")) fails.push("第二重不限金額（1 元也可）");
   eq([g1.ok, g1.bonus, g1.required, g2.ok, g2.bonus, g2.required], [true, 11, 55, true, 111, 555], "第一重 11／第二重 111、彩金 5 倍流水");
   [["4999",false],["5000",111],["9999",111],["10000",1111],["50000",1111]].forEach(([d,b]) => {
     const r = calculate(G3, d, -1, String(parseAmount(d) * 11));
@@ -1846,22 +1864,31 @@ window.__selfTest = function(){
   });
   eq([calculate(G5, "1111110").ok, calculate(G5, "1111111").bonus, calculate(G5, "1111111").required], [false, 110000, 550000], "第五重淨盈利門檻");
   const g4c = buildConfirm(calculate(G4, "1000000")), g4f = buildFinish(calculate(G4, "1000000"));
-  ["申請 【1111光棍脫單狂歡節-第四重】","加贈彩金:51111\n","須達碼量:255555（彩金）× 5 倍","每日限申請一次"].forEach(x => { if(!g4c.includes(x)) fails.push(`第四重確認文案缺: ${x}`); });
-  ["獲得彩金：51111\n","須達碼量：255555\n","4.彩金碼量為彩金 * 5 倍流水後方可申請出款。"].forEach(x => { if(!g4f.includes(x)) fails.push(`第四重結束文案缺: ${x}`); });
+  ["申請 【1111光棍脫單狂歡節-第四重】","加贈彩金:51111\n","彩金碼量:255555（彩金）× 5 倍","每日限申請一次"].forEach(x => { if(!g4c.includes(x)) fails.push(`第四重確認文案缺: ${x}`); });
+  ["獲得彩金：51111\n","彩金碼量：255555\n","4.彩金碼量為彩金 * 5 倍流水後方可申請出款。"].forEach(x => { if(!g4f.includes(x)) fails.push(`第四重結束文案缺: ${x}`); });
   if(PARTS.some(p => p.rules.concat(p.terms).join("").includes("第一重至第五重"))) fails.push("第五重資格不應自我引用（第一重至第五重）");
   eq(PARTS.some(canStack), false, "光棍節不顯示 1+1 疊加勾選");
-  const k12 = calculateCombo([G1, G2], {});
+  const k12 = calculateCombo([G1, G2], { amount:"3000" });
   eq([k12.ok, k12.bonus, k12.required], [true, 122, 610], "合併：第一＋第二重");
   const k13 = calculateCombo([G1, G3], { amount:"10000", flow:"110000" });
   eq([k13.ok, k13.bonus, k13.required], [true, 1122, 5610], "合併：第一＋第三重");
   const k13c = buildConfirm(k13), k13f = buildFinish(k13);
-  ["申請 【1111光棍脫單狂歡節-第一重＋第三重】","適用方案:第一重 11＋第三重 1111","本次儲值:$10,000","儲值後有效流水:$110,000（須達 $110,000）","加贈彩金:1122\n","須達碼量:5610（彩金）× 5 倍"].forEach(x => { if(!k13c.includes(x)) fails.push(`合併確認文案缺: ${x}`); });
-  ["申請項目：1111光棍脫單狂歡節-第一重＋第三重","本次儲值：10,000\n","儲值後有效流水：110,000\n","獲得彩金：1122\n","須達碼量：5610\n"].forEach(x => { if(!k13f.includes(x)) fails.push(`合併結束文案缺: ${x}`); });
+  ["申請 【1111光棍脫單狂歡節-第一重＋第三重】","適用方案:第一重 11＋第三重 1111","本次儲值:$10,000","儲值後有效流水:$110,000（須達 $110,000）","加贈彩金:1122\n","彩金碼量:5610（彩金）× 5 倍"].forEach(x => { if(!k13c.includes(x)) fails.push(`合併確認文案缺: ${x}`); });
+  ["申請項目：1111光棍脫單狂歡節-第一重＋第三重","本次儲值：10,000\n","儲值後有效流水：110,000\n","獲得彩金：1122\n","彩金碼量：5610\n"].forEach(x => { if(!k13f.includes(x)) fails.push(`合併結束文案缺: ${x}`); });
   const k34 = calculateCombo([G3, G4], { amount:"10000", flow:"" });
   eq([k34.ok, k34.reason.startsWith("【第三重】請輸入儲值後有效流水")], [false, true], "合併：任一重不符就擋並標示哪一重");
   const k45 = calculateCombo([G4, G5], { amount:"1000000", extra:"1111111" });
   eq([k45.ok, k45.bonus, k45.required], [true, 161111, 805555], "合併：第四＋第五重（儲值與淨盈利分開填）");
   if(!buildConfirm(k45).includes("活動期間淨盈利:$1,111,111")) fails.push("合併確認文案缺淨盈利");
+  if(!k13c.includes("彩金碼量:5610（彩金）× 5 倍\n所需計算方式:(10000)+(5610)=(15610) 這部分為您本次儲值領取優惠後共計須完成碼量\n")) fails.push("合併確認文案缺所需計算方式");
+  if(!k13f.includes("彩金碼量：5610\n所需計算方式:(10000)+(5610)=(15610)")) fails.push("合併結束文案缺所需計算方式");
+  if(!buildConfirm(calculate(G4, "50000")).includes("所需計算方式:(50000)+(12555)=(62555)")) fails.push("第四重所需計算方式");
+  if(!buildConfirm(g1).includes("所需計算方式:(0)+(55)=(55)")) fails.push("第一重無儲值 → 儲值碼量 0");
+  if(!buildConfirm(calculate(G5, "1111111")).includes("所需計算方式:(0)+(550000)=(550000)")) fails.push("第五重淨盈利不算儲值碼量");
+  const k15 = calculateCombo([G1, G5], { amount:"5000", extra:"1111111" }), k15n = calculateCombo([G1, G5], { extra:"1111111" });
+  if(!buildConfirm(k15).includes("本次儲值:$5,000") || !buildConfirm(k15).includes("所需計算方式:(5000)+(550055)=(555055)")) fails.push("合併：無儲值類項目也可填儲值算儲值碼量");
+  if(buildConfirm(k15n).includes("本次儲值:") || !buildConfirm(k15n).includes("所需計算方式:(0)+(550055)=(550055)")) fails.push("合併：儲值選填留空為 0");
+  eq(k15n.ok, true, "合併：儲值選填不擋");
   eq(buildRemark(k13).endsWith(" 1111光棍脫單狂歡節-第一重＋第三重-1122"), true, "合併備註");
   eq([fieldOf(G3), fieldOf(G4), fieldOf(G5), fieldOf(G1)], ["amount", "amount", "extra", null], "欄位分配");
   eq([liveParts(Date.parse("2026-11-15T23:59:58+08:00")).length, liveParts(Date.parse("2026-11-16T00:00:00+08:00")).length], [5, 0], "11/15 23:59 五重仍在、11/16 00:00 結束");

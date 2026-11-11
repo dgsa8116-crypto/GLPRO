@@ -723,7 +723,7 @@ const CAMPAIGN = {
       chip: "須先完成 11 倍流水 · 每日限領一次",
       tiers: [
         { min:5000, bonus:111, label:"儲值 5,000～9,999 且流水達 11 倍送 111" },
-        { min:10000, bonus:1111, label:"儲值 10,000 以上且流水達 11 倍送 1111" },
+        { min:10001, bonus:1111, label:"儲值 10,000 以上且流水達 11 倍送 1111" },
       ],
       turnover: "彩金",
       multiplier: 5,
@@ -1847,7 +1847,7 @@ window.__selfTest = function(){
   if(!buildConfirm(g2).includes("本次儲值:$3,000") || !buildConfirm(g2).includes("所需計算方式:(3000)+(555)=(3555)")) fails.push("第二重儲值碼量");
   if(!buildFinish(calculate(G2, "1")).includes("所需計算方式:(1)+(555)=(556)")) fails.push("第二重不限金額（1 元也可）");
   eq([g1.ok, g1.bonus, g1.required, g2.ok, g2.bonus, g2.required], [true, 11, 55, true, 111, 555], "第一重 11／第二重 111、彩金 5 倍流水");
-  [["4999",false],["5000",111],["9999",111],["10000",1111],["50000",1111]].forEach(([d,b]) => {
+  [["4999",false],["5000",111],["9999",111],["10001",1111],["50000",1111]].forEach(([d,b]) => {
     const r = calculate(G3, d, -1, String(parseAmount(d) * 11));
     if(b === false) eq(r.ok, false, `第三重未達門檻 calculate(${d})`);
     else eq([r.ok, r.bonus, r.required], [true, b, b * 5], `第三重 calculate(${d})`);
